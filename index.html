@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>약관 동의</title>
+    <style>
+        /* CSS 스타일 */
+        :root {
+            --bg-color: #f2f2f7;
+            --card-color: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #8e8e93;
+            --accent: #007aff;
+            --error: #ff3b30;
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            overscroll-behavior-y: none;
+        }
+
+        #mobile-container {
+            width: 100%;
+            max-width: 430px;
+            height: 100%;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ★ 추가된 검은색 암전 오버레이 (화면 전체를 고르게 덮음) ★ */
+        #black-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #000;
+            opacity: 0;
+            z-index: 100;
+            pointer-events: none;
+            transition: opacity 2s ease;
+        }
+
+        .screen {
+            display: none;
+            padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 20px);
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .screen.active {
+            display: flex;
+            animation: fadeSlideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+            padding-left: 36px;
+            margin-bottom: 18px;
+            cursor: pointer;
+            font-size: 17px;
+            user-select: none;
+            line-height: 24px;
+            color: var(--text-primary);
+        }
+
+        .checkbox-container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 24px;
+            width: 24px;
+            background-color: #fff;
+            border: 2px solid #c7c7cc;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+
+        .checkbox-container input:checked~.checkmark {
+            background-color: #000;
+            border-color: #000;
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .checkbox-container input:checked~.checkmark:after {
+            display: block;
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2.5px 2.5px 0;
+            transform: rotate(45deg);
+        }
+
+        #screen-1 {
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup {
+            background: var(--card-color);
+            padding: 30px 24px;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            width: 100%;
+        }
+
+        .popup p {
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .header-area {
+            padding-bottom: 20px;
+            position: sticky;
+            top: 0;
+            background: linear-gradient(var(--bg-color) 80%, transparent);
+            z-index: 10;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+
+        .list-item {
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .list-item.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .target-item {
+            margin-top: 50px;
+            font-weight: 700;
+        }
+
+        #error-message {
+            color: var(--error);
+            font-weight: 700;
+            margin: -10px 0 20px 36px;
+            font-size: 15px;
+            letter-spacing: 1px;
+            animation: blink 0.5s infinite;
+        }
+
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+            color: var(--error);
+        }
+
+        .shake .checkmark {
+            border-color: var(--error);
+            background-color: rgba(255, 59, 48, 0.1);
+        }
+
+        .bottom-spacer {
+            height: 100px;
+        }
+
+        #screen-3 {
+            justify-content: center;
+            color: #fff;
+        }
+
+        #screen-3.active {
+            animation: none;
+        }
+
+        .dark-mode .checkbox-container {
+            color: #fff;
+        }
+
+        .dark-mode .checkmark {
+            background: #000;
+            border-color: #555;
+        }
+
+        .dark-mode input:checked~.checkmark {
+            background-color: #fff;
+            border-color: #fff;
+        }
+
+        .dark-mode input:checked~.checkmark:after {
+            border-color: #000;
+        }
+
+        .comfort-text p {
+            margin-bottom: 18px;
+            font-size: 19px;
+            line-height: 1.5;
+            font-weight: 500;
+            opacity: 0;
+        }
+
+        .final-agree-box {
+            margin-top: 60px;
+            opacity: 0;
+        }
+
+        .final-guide {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        #push-notification {
+            position: absolute;
+            top: -100px;
+            left: 16px;
+            right: 16px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            display: flex;
+            gap: 12px;
+            transition: top 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 9999;
+        }
+
+        #push-notification.show {
+            top: calc(var(--safe-top) + 10px);
+        }
+
+        .push-icon {
+            font-size: 24px;
+            background: #000;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .push-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .push-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: #000;
+        }
+
+        .push-time {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .push-body {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translate3d(-2px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(4px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-6px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(6px, 0, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="mobile-container">
+        <!-- ★ 추가된 오버레이 요소 ★ -->
+        <div id="black-overlay" class="hidden"></div>
+
+        <!-- 푸시 알림 -->
+        <div id="push-notification">
+            <div class="push-icon">⚙️</div>
+            <div class="push-content">
+                <div class="push-header"><span class="push-title">시스템 알림</span><span class="push-time">방금</span></div>
+                <div class="push-body">새로운 약관이 추가되었습니다. 지금 바로 확인하고 동의해주세요.</div>
+            </div>
+        </div>
+
+        <!-- 1. 초기 팝업 -->
+        <section id="screen-1" class="screen active">
+            <div class="popup">
+                <p>본 서비스를 이용하기 위해서는 다음의 조건에 동의해야 합니다.</p>
+                <label class="checkbox-container">
+                    <input type="checkbox" id="init-agree">
+                    <span class="checkmark"></span>
+                    <span class="label-text">동의합니다</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- 2. 체크리스트 및 에러 -->
+        <section id="screen-2" class="screen">
+            <div class="header-area">
+                <h2 class="section-title">추가 약관 동의</h2>
+                <p class="subtitle">처음에는 몇 개 없었던 약관이 계속 추가됨.</p>
+            </div>
+            <div id="checklist-container"></div>
+            <div id="error-section" class="hidden">
+                <label class="checkbox-container target-item" id="myself-label">
+                    <input type="checkbox" id="myself-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="label-text">자기 자신으로 살아가기</span>
+                </label>
+                <p id="error-message" class="hidden">ERROR</p>
+            </div>
+            <div class="bottom-spacer"></div>
+        </section>
+
+        <!-- 3. 결말부 -->
+        <section id="screen-3" class="screen dark-mode">
+            <div class="final-terms">
+                <h2>&lt;청소년 이용약관&gt;</h2>
+                <div class="comfort-text">
+                    <p>실패해도 됩니다.</p>
+                    <p>꿈이 없어도 됩니다.</p>
+                    <p>가끔은 아무것도 하지 않아도 됩니다.</p><br>
+                    <p>그리고 무엇보다,</p>
+                    <p>다른 사람의 잣대에<br>기준을 맞추지 않아도 됩니다.</p>
+                </div>
+                <div class="final-agree-box">
+                    <p class="final-guide">마지막 항목:</p>
+                    <label class="checkbox-container final-item">
+                        <input type="checkbox" id="final-agree">
+                        <span class="checkmark"></span>
+                        <span class="label-text">나 자신으로 살아가는 것에 동의합니다.</span>
+                    </label>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const screen1 = document.getElementById('screen-1');
+            const screen2 = document.getElementById('screen-2');
+            const screen3 = document.getElementById('screen-3');
+            const container = document.getElementById('mobile-container');
+
+            const vibrate = (pattern) => {
+                if (navigator.vibrate) navigator.vibrate(pattern);
+            };
+
+            // 1번 화면 -> 2번 화면 전환
+            document.getElementById('init-agree').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    vibrate(50);
+                    setTimeout(() => {
+                        screen1.classList.remove('active');
+                        screen2.classList.add('active');
+                        startChecklistPressure();
+                    }, 400);
+                }
+            });
+
+            const pressureTerms = [
+                "좋은 학생", "좋은 친구", "좋은 자녀",
+                "긍정적인 사람", "성실한 사람", "꿈이 있는 사람",
+                "뒤처지지 않는 사람", "남들과 비교해도 괜찮은 사람"
+            ];
+
+            function startChecklistPressure() {
+                const listContainer = document.getElementById('checklist-container');
+
+                pressureTerms.forEach((term, index) => {
+                    setTimeout(() => {
+                        const label = document.createElement('label');
+                        label.className = 'checkbox-container list-item';
+                        label.innerHTML = `<input type="checkbox" checked disabled><span class="checkmark"></span><span class="label-text">${term}</span>`;
+                        listContainer.appendChild(label);
+
+                        requestAnimationFrame(() => {
+                            label.classList.add('show');
+                            label.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        });
+                        vibrate(20);
+                    }, index * 800 + 500);
+                });
+
+                setTimeout(showFakePushNotification, 4500);
+
+                setTimeout(() => {
+                    const errorSection = document.getElementById('error-section');
+                    errorSection.classList.remove('hidden');
+                    errorSection.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, pressureTerms.length * 800 + 1500);
+            }
+
+            function showFakePushNotification() {
+                vibrate([300, 100, 300]);
+                const push = document.getElementById('push-notification');
+                push.classList.add('show');
+                setTimeout(() => push.classList.remove('show'), 3500);
+            }
+
+            const mySelfBtn = document.getElementById('myself-checkbox');
+            const mySelfLabel = document.getElementById('myself-label');
+            const errorMsg = document.getElementById('error-message');
+            let errorCount = 0;
+            let isTransitioning = false;
+
+            // ERROR 버튼 클릭 로직
+            mySelfBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (isTransitioning) return;
+
+                errorCount++;
+                errorMsg.classList.remove('hidden');
+                vibrate([100, 50, 100]);
+
+                mySelfLabel.classList.remove('shake');
+                void mySelfLabel.offsetWidth;
+                mySelfLabel.classList.add('shake');
+
+                // ★ 수정된 암전 로직 (오버레이 활용) ★
+                if (errorCount >= 2) {
+                    isTransitioning = true;
+
+                    // 1. 검은색 레이어를 서서히 띄워 화면 전체를 고르게 가림
+                    const overlay = document.getElementById('black-overlay');
+                    overlay.classList.remove('hidden');
+                    void overlay.offsetWidth; // 렌더링 동기화
+                    overlay.style.opacity = 1;
+
+                    // 2. 2초 뒤 화면이 완벽히 까매지면, 뒤에서 화면을 교체
+                    setTimeout(() => {
+                        screen2.classList.remove('active');
+                        container.style.backgroundColor = "#000"; // 배경 완전 검은색 고정
+                        overlay.classList.add('hidden'); // 전환 완료 후 오버레이 숨김
+
+                        screen3.classList.add('active');
+                        playFinalAnimation();
+                    }, 2000);
+                }
+            });
+
+            // 결말부 문구 애니메이션
+            function playFinalAnimation() {
+                const texts = document.querySelectorAll('.comfort-text p');
+                texts.forEach((p, idx) => {
+                    p.style.animation = `fadeSlideIn 1.5s ease forwards ${idx * 1.5}s`;
+                });
+
+                const finalBox = document.querySelector('.final-agree-box');
+                finalBox.style.animation = `fadeSlideIn 1.5s ease forwards ${texts.length * 1.5}s`;
+            }
+
+            // 최종 완료 (완전 암전)
+            document.getElementById('final-agree').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    vibrate([50, 50, 50]);
+
+                    // 마지막 체크 시 다시 한 번 오버레이를 덮어 완전 암전시킴
+                    const overlay = document.getElementById('black-overlay');
+                    overlay.classList.remove('hidden');
+                    void overlay.offsetWidth;
+                    overlay.style.opacity = 1;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
