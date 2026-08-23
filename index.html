@@ -1101,15 +1101,25 @@
                 }, 1000);
             }
 
-            // ---- 잠금화면 알림 타이밍 ----
-            // 첫 알림은 "동의하시겠습니까?" 를 체크한 시점 기준 정확히 10초 뒤에 도착한다.
-            // 제1조가 화면에 뜨기까지 350 + 900 = 1250ms 가 걸리므로,
-            // 제1조는 표시된 뒤 8750ms 후에 알림을 보낸다.
-            const INTRO_TO_ARTICLE_MS = 1250;
-            const FIRST_NOTIF_AFTER_AGREE_MS = 10000;
-            const FIRST_ARTICLE_NOTIF_DELAY_MS = FIRST_NOTIF_AFTER_AGREE_MS - INTRO_TO_ARTICLE_MS;
-            // 제2·3조는 기존 리듬을 유지한다
-            const ARTICLE_NOTIF_DELAY_MS = 1750;
+            // ---- 조항 화면 타이밍 ----
+            // 원칙: 조항이 화면에 "다 뜨는 순간" 잠금화면 알림이 함께 도착한다.
+            // 그래서 사이트 문구와 알림이 어긋날 수 없다.
+
+            // 조항이 화면에 완전히 나타나기까지 걸리는 시간
+            const ARTICLE_REVEAL_MS = 2000;    // 제1조: 화면 전환 (페이드아웃 1s + 페이드인 1s)
+            const ARTICLE_CARD_FADE_MS = 900;  // 제2·3조: 카드 페이드인
+
+            // "동의하시겠습니까?" 체크 -> 제1조가 화면에 뜨고 첫 알림이 오기까지
+            const FIRST_ARTICLE_ON_SITE_MS = 10000;
+            const INTRO_DARKEN_DELAY_MS = 350;
+            // 암전을 유지하는 시간. 여기서 화면을 바꾸고 ARTICLE_REVEAL_MS 뒤에 제1조가 뜬다.
+            const INTRO_HOLD_MS =
+                FIRST_ARTICLE_ON_SITE_MS - INTRO_DARKEN_DELAY_MS - ARTICLE_REVEAL_MS;
+
+            // 조항 사이 간격: 탭 -> 다음 조항이 다 뜰 때까지
+            const ARTICLE_GAP_MS = 5000;
+            // 마지막 조항 -> 알림 폭주 화면 (기존 유지)
+            const ARTICLE_TO_FLOOD_MS = 1000;
 
             // 체크 시점에 시작한 권한 요청. 알림 예약이 이 결과를 재사용해서
             // 권한을 다시 묻지 않는다.
@@ -1143,9 +1153,11 @@
                     setTimeout(() => {
                         goTo(screenArticle);
                         darken(0);
-                        showArticle(0); // 여기서 첫 알림 예약 -> 체크 후 정확히 3초
-                    }, 900);
-                }, 350);
+                        // 화면 전환과 알림 예약이 동시에 시작된다.
+                        // 둘 다 ARTICLE_REVEAL_MS 뒤 -> 체크 후 정확히 10초에 함께 도착.
+                        showArticle(0);
+                    }, INTRO_HOLD_MS);
+                }, INTRO_DARKEN_DELAY_MS);
             });
 
             // ---- 2번 화면 ----
@@ -1173,7 +1185,8 @@
                 articleGuide.classList.add('waiting');
 
                 const a = articles[i];
-                const delay = (i === 0) ? FIRST_ARTICLE_NOTIF_DELAY_MS : ARTICLE_NOTIF_DELAY_MS;
+                // 조항이 화면에 다 뜨는 시점에 맞춘다
+                const delay = (i === 0) ? ARTICLE_REVEAL_MS : ARTICLE_CARD_FADE_MS;
 
                 articleNotifTimer = setTimeout(() => {
                     articleNotifTimer = null;
@@ -1208,6 +1221,13 @@
                 card.style.opacity = '0';
                 articleGuide.classList.add('waiting');
 
+                // 다음 조항이 "다 뜨는" 시점이 탭 후 ARTICLE_GAP_MS 가 되도록,
+                // 카드 페이드인 시간만큼 앞당겨서 교체한다.
+                const isLastArticle = (articleIndex + 1) >= articles.length;
+                const wait = isLastArticle
+                    ? ARTICLE_TO_FLOOD_MS
+                    : (ARTICLE_GAP_MS - ARTICLE_CARD_FADE_MS);
+
                 setTimeout(() => {
                     articleIndex++;
                     if (articleIndex < articles.length) {
@@ -1223,7 +1243,7 @@
                         goTo(screenFlood);
                         startFlood();
                     }
-                }, 1000);
+                }, wait);
             });
 
             // ---- 3번 화면 ----

@@ -2,7 +2,7 @@
  * - fetch 핸들러가 있어야 Chromium 계열에서 "설치 가능(installable)" 판정을 받습니다.
  * - 앱 셸을 미리 캐싱해 두어 설치 후 오프라인에서도 실행됩니다.
  */
-const CACHE = "juspeace-v3";
+const CACHE = "juspeace-v4";
 
 const ASSETS = [
     "./",
