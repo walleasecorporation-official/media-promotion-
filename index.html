@@ -60,7 +60,9 @@
             width: 100%;
             max-width: 430px;
             height: 100%;
-            background-color: var(--bg-color);
+            /* 작품 전체가 검은 화면이므로 첫 화면부터 검정으로 시작한다
+               (theme-color 메타와도 일치해 첫 페인트에서 색이 튀지 않음) */
+            background-color: #000;
             position: relative;
             overflow-y: auto;
             overflow-x: hidden;
@@ -181,20 +183,20 @@
         #screen-1 {
             justify-content: center;
             align-items: center;
+            background-color: #000;
         }
 
         .popup {
             background: var(--card-color);
-            padding: 30px 24px;
+            padding: 24px;
             border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             width: 100%;
         }
 
-        .popup p {
-            margin-bottom: 30px;
-            font-size: 16px;
-            line-height: 1.5;
+        /* 문구가 한 줄뿐이라 위아래 여백을 맞춘다 */
+        .popup .checkbox-container {
+            margin-bottom: 0;
+            font-size: 17px;
             font-weight: 500;
         }
 
@@ -406,10 +408,11 @@
             bottom: calc(var(--safe-bottom) + 12px);
             width: min(406px, calc(100% - 24px));
             z-index: 500;
-            background: rgba(20, 20, 22, .94);
+            /* 1번 화면이 검정이라 표면을 한 단계 올려야 배너가 떠 보인다 */
+            background: rgba(44, 44, 46, .96);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, .1);
+            border: 1px solid rgba(255, 255, 255, .14);
             border-radius: 16px;
             padding: 12px 12px 12px 14px;
             display: flex;
@@ -522,7 +525,8 @@
             width: min(430px, 100%);
             max-height: 86dvh;
             overflow-y: auto;
-            background: #1c1c1e;
+            background: #2c2c2e;
+            border-top: 1px solid rgba(255, 255, 255, .12);
             border-radius: 20px 20px 0 0;
             padding: 10px 20px calc(var(--safe-bottom) + 16px);
             color: #fff;
@@ -909,7 +913,6 @@
         <!-- 1. 초기 동의 (사이트에만 표시, 잠금알림 없음) -->
         <section id="screen-1" class="screen active">
             <div class="popup">
-                <p>본 서비스를 계속 이용하기 위해서는 아래 항목에 동의해야 합니다.</p>
                 <label class="checkbox-container">
                     <input type="checkbox" id="init-agree">
                     <span class="checkmark"></span>
@@ -1091,13 +1094,18 @@
                 }, 1000);
             }
 
-            function scheduleLockNotification(title, body, tag) {
-                setTimeout(() => {
-                    ensureNotifPermission().then(granted => {
-                        if (granted) sendNotification(title, body, { tag });
-                    });
-                }, 5000);
-            }
+            // ---- 잠금화면 알림 타이밍 ----
+            // 첫 알림은 "동의하시겠습니까?" 를 체크한 시점 기준 정확히 3초 뒤에 도착한다.
+            // 제1조가 화면에 뜨기까지 350 + 900 = 1250ms 가 걸리므로,
+            // 각 조항은 "화면에 표시된 뒤" 1750ms 후에 알림을 보낸다.
+            const INTRO_TO_ARTICLE_MS = 1250;
+            const FIRST_NOTIF_AFTER_AGREE_MS = 3000;
+            const ARTICLE_NOTIF_DELAY_MS = FIRST_NOTIF_AFTER_AGREE_MS - INTRO_TO_ARTICLE_MS;
+
+            // 체크 시점에 시작한 권한 요청. 알림 예약이 이 결과를 재사용해서
+            // 권한을 다시 묻지 않는다.
+            let notifPermission = null;
+            let articleNotifTimer = null;
 
             // (신규) 설치 배너를 완전히 제거하는 함수. installFlow 정의 이전에도
             // 호출될 수 있으므로 여기서 안전하게 처리합니다.
@@ -1111,18 +1119,22 @@
             }
 
             // ---- 1번 화면: 초기 동의 ----
-            document.getElementById('init-agree').addEventListener('change', async (e) => {
+            document.getElementById('init-agree').addEventListener('change', (e) => {
                 if (!e.target.checked) return;
                 flowStarted = true;
                 retireInstallBanner(); // 흐름이 시작되면 설치 배너는 영구히 사라짐
                 vibrate(50);
-                await ensureNotifPermission();
+
+                // 권한 요청은 사용자 제스처 안에서 시작하되 기다리지는 않는다.
+                // await 로 막으면 권한 팝업을 늦게 닫을수록 연출 전체가 그만큼 밀린다.
+                notifPermission = ensureNotifPermission();
+
                 setTimeout(() => {
                     darken(1);
                     setTimeout(() => {
                         goTo(screenArticle);
                         darken(0);
-                        showArticle(0);
+                        showArticle(0); // 여기서 첫 알림 예약 -> 체크 후 정확히 3초
                     }, 900);
                 }, 350);
             });
@@ -1138,20 +1150,34 @@
 
             function articleFullText(a) { return `${a.need} ${a.rest}`; }
 
+            // 예전에는 조항을 "넘길 때" 5초 뒤 알림을 예약해서, 제1조 알림이
+            // 제2조 화면에서 도착하는 식으로 한 턴씩 밀렸다.
+            // 이제 조항이 "표시될 때" 예약하므로 화면과 알림의 조항이 항상 일치한다.
+            function scheduleArticleNotification(i) {
+                clearTimeout(articleNotifTimer);
+                const a = articles[i];
+                articleNotifTimer = setTimeout(() => {
+                    articleNotifTimer = null;
+                    (notifPermission || ensureNotifPermission()).then(granted => {
+                        if (granted) {
+                            sendNotification(`[${a.code}]`, articleFullText(a), { tag: "article-" + i });
+                        }
+                    });
+                }, ARTICLE_NOTIF_DELAY_MS);
+            }
+
             function showArticle(i) {
                 const a = articles[i];
                 document.getElementById('article-code').textContent = `[${a.code}]`;
                 document.getElementById('article-title').innerHTML =
                     `<span class="not-met">${a.need}</span><br>${a.rest}`;
                 vibrate(30);
+                scheduleArticleNotification(i);
             }
 
             screenArticle.addEventListener('click', () => {
                 if (articleBusy) return;
                 articleBusy = true;
-
-                const finished = articles[articleIndex];
-                scheduleLockNotification(`[${finished.code}]`, articleFullText(finished), "article-" + articleIndex);
 
                 const card = document.querySelector('#screen-article .article-card');
                 const guide = document.querySelector('#screen-article .tap-guide');
