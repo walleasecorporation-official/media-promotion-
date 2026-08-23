@@ -647,6 +647,13 @@
             animation: pulseGuide 1.6s ease-in-out infinite;
         }
 
+        /* CSS 애니메이션이 inline style 보다 우선하므로 opacity 만 0 으로 줘서는
+           안내 문구가 숨겨지지 않는다. 애니메이션 자체를 끄고 감춘다. */
+        .tap-guide.waiting {
+            animation: none;
+            opacity: 0;
+        }
+
         @keyframes pulseGuide {
 
             0%,
@@ -927,7 +934,7 @@
                 <div class="article-code" id="article-code"></div>
                 <div class="article-title" id="article-title"></div>
             </div>
-            <div class="tap-guide">화면을 눌러 계속하기</div>
+            <div class="tap-guide waiting">화면을 눌러 계속하기</div>
         </section>
 
         <!-- 3. 알림 폭주 -->
@@ -936,14 +943,14 @@
                 <h2>알림 5개</h2>
             </div>
             <div id="flood-container" style="width:100%;"></div>
-            <div class="tap-guide" id="flood-guide" style="opacity:0;">화면을 눌러 계속하기</div>
+            <div class="tap-guide waiting" id="flood-guide">화면을 눌러 계속하기</div>
         </section>
 
         <!-- 4. 비교 분석 결과 -->
         <section id="screen-compare" class="screen dark-screen">
             <div class="compare-label">비교 분석 결과</div>
             <div class="compare-value" id="compare-value">하위 38%</div>
-            <div class="tap-guide" id="compare-guide" style="opacity:0;">화면을 눌러 계속하기</div>
+            <div class="tap-guide waiting" id="compare-guide">화면을 눌러 계속하기</div>
         </section>
 
         <!-- 5. 약관 위반 카운트 + 20개 항목 폭주 + 예/아니요 -->
@@ -1095,12 +1102,14 @@
             }
 
             // ---- 잠금화면 알림 타이밍 ----
-            // 첫 알림은 "동의하시겠습니까?" 를 체크한 시점 기준 정확히 3초 뒤에 도착한다.
+            // 첫 알림은 "동의하시겠습니까?" 를 체크한 시점 기준 정확히 10초 뒤에 도착한다.
             // 제1조가 화면에 뜨기까지 350 + 900 = 1250ms 가 걸리므로,
-            // 각 조항은 "화면에 표시된 뒤" 1750ms 후에 알림을 보낸다.
+            // 제1조는 표시된 뒤 8750ms 후에 알림을 보낸다.
             const INTRO_TO_ARTICLE_MS = 1250;
-            const FIRST_NOTIF_AFTER_AGREE_MS = 3000;
-            const ARTICLE_NOTIF_DELAY_MS = FIRST_NOTIF_AFTER_AGREE_MS - INTRO_TO_ARTICLE_MS;
+            const FIRST_NOTIF_AFTER_AGREE_MS = 10000;
+            const FIRST_ARTICLE_NOTIF_DELAY_MS = FIRST_NOTIF_AFTER_AGREE_MS - INTRO_TO_ARTICLE_MS;
+            // 제2·3조는 기존 리듬을 유지한다
+            const ARTICLE_NOTIF_DELAY_MS = 1750;
 
             // 체크 시점에 시작한 권한 요청. 알림 예약이 이 결과를 재사용해서
             // 권한을 다시 묻지 않는다.
@@ -1147,15 +1156,25 @@
             ];
             let articleIndex = 0;
             let articleBusy = false;
+            let articleTapReady = false;
+            const articleGuide = document.querySelector('#screen-article .tap-guide');
 
             function articleFullText(a) { return `${a.need} ${a.rest}`; }
 
             // 예전에는 조항을 "넘길 때" 5초 뒤 알림을 예약해서, 제1조 알림이
             // 제2조 화면에서 도착하는 식으로 한 턴씩 밀렸다.
             // 이제 조항이 "표시될 때" 예약하므로 화면과 알림의 조항이 항상 일치한다.
+            // 알림이 나가기 전에는 다음 조항으로 넘어갈 수 없다.
+            // 넘길 수 있게 두면 예약된 알림이 취소돼 첫 알림이 아예 오지 않는다.
+            // (알림 폭주·비교 분석 화면이 쓰던 방식과 동일하다)
             function scheduleArticleNotification(i) {
                 clearTimeout(articleNotifTimer);
+                articleTapReady = false;
+                articleGuide.classList.add('waiting');
+
                 const a = articles[i];
+                const delay = (i === 0) ? FIRST_ARTICLE_NOTIF_DELAY_MS : ARTICLE_NOTIF_DELAY_MS;
+
                 articleNotifTimer = setTimeout(() => {
                     articleNotifTimer = null;
                     (notifPermission || ensureNotifPermission()).then(granted => {
@@ -1163,7 +1182,10 @@
                             sendNotification(`[${a.code}]`, articleFullText(a), { tag: "article-" + i });
                         }
                     });
-                }, ARTICLE_NOTIF_DELAY_MS);
+                    // 권한을 거부했더라도 여기서 흐름은 열어준다
+                    articleTapReady = true;
+                    articleGuide.classList.remove('waiting');
+                }, delay);
             }
 
             function showArticle(i) {
@@ -1176,16 +1198,15 @@
             }
 
             screenArticle.addEventListener('click', () => {
-                if (articleBusy) return;
+                if (articleBusy || !articleTapReady) return;
                 articleBusy = true;
+                articleTapReady = false;
 
                 const card = document.querySelector('#screen-article .article-card');
-                const guide = document.querySelector('#screen-article .tap-guide');
 
                 card.style.transition = 'opacity 0.9s ease';
                 card.style.opacity = '0';
-                guide.style.transition = 'opacity 0.9s ease';
-                guide.style.opacity = '0';
+                articleGuide.classList.add('waiting');
 
                 setTimeout(() => {
                     articleIndex++;
@@ -1195,7 +1216,8 @@
                         void card.offsetWidth;
                         card.style.transition = 'opacity 0.9s ease';
                         card.style.opacity = '1';
-                        guide.style.opacity = '1';
+                        // 안내 문구는 showArticle -> scheduleArticleNotification 이
+                        // 알림을 보내는 시점에 다시 나타난다
                         setTimeout(() => { articleBusy = false; }, 950);
                     } else {
                         goTo(screenFlood);
@@ -1217,7 +1239,7 @@
                 const listEl = document.getElementById('flood-container');
                 const guide = document.getElementById('flood-guide');
                 listEl.innerHTML = '';
-                guide.style.opacity = '0';
+                guide.classList.add('waiting');
                 ensureNotifPermission();
 
                 floodItems.forEach((item, idx) => {
@@ -1237,17 +1259,22 @@
                 });
 
                 setTimeout(() => {
-                    guide.style.opacity = '1';
+                    guide.classList.remove('waiting');
                 }, floodItems.length * 450 + 500);
             }
+
+            // "알림 5개" 에서 "하위 38%" 가 뜰 때까지의 간격.
+            // 화면 전환(암전 1s + 페이드인 1s) 뒤 "비교 분석 결과" 라벨만 남은 채로
+            // 나머지 시간을 기다렸다가 수치가 나타난다.
+            const FLOOD_TO_COMPARE_MS = 10000;
 
             let floodBusy = false;
             screenFlood.addEventListener('click', () => {
                 if (floodBusy) return;
-                if (document.getElementById('flood-guide').style.opacity !== '1') return;
+                if (document.getElementById('flood-guide').classList.contains('waiting')) return;
                 floodBusy = true;
                 goTo(screenCompare);
-                setTimeout(startCompare, 2100);
+                setTimeout(startCompare, FLOOD_TO_COMPARE_MS);
             });
 
             // ---- 4번 화면 ----
@@ -1256,21 +1283,20 @@
                 compareBusy = false;
                 const val = document.getElementById('compare-value');
                 const guide = document.getElementById('compare-guide');
-                guide.style.opacity = '0';
+                guide.classList.add('waiting');
                 val.classList.remove('show');
                 void val.offsetWidth;
                 val.classList.add('show');
                 setTimeout(() => vibrate([250, 120, 250, 120, 250]), 500);
                 setTimeout(() => {
-                    guide.style.transition = 'opacity 0.9s ease';
-                    guide.style.opacity = '1';
+                    guide.classList.remove('waiting');
                 }, 1800);
             }
 
             screenCompare.addEventListener('click', () => {
                 if (compareBusy) return;
                 const guide = document.getElementById('compare-guide');
-                if (guide.style.opacity !== '1') return;
+                if (guide.classList.contains('waiting')) return;
                 compareBusy = true;
                 goTo(screenViolation);
                 setTimeout(startViolation, 300);
