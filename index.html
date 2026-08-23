@@ -6,8 +6,22 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>약관 동의</title>
+
+    <!-- PWA: 매니페스트/아이콘은 실제 파일로 제공해야 설치 가능 판정을 받습니다 -->
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+    <meta name="description" content="밀알 영상제 출품작 · 청소년 이용약관">
+    <meta name="theme-color" content="#000000">
+    <meta name="color-scheme" content="dark light">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="약관동의">
+    <meta name="format-detection" content="telephone=no">
+
     <style>
-        /* CSS 스타일 */
         :root {
             --bg-color: #f2f2f7;
             --card-color: #ffffff;
@@ -23,8 +37,13 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Apple SD Gothic Neo", sans-serif;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
 
         body {
@@ -32,8 +51,9 @@
             display: flex;
             justify-content: center;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
-            overscroll-behavior-y: none;
+            overscroll-behavior: none;
         }
 
         #mobile-container {
@@ -44,12 +64,14 @@
             position: relative;
             overflow-y: auto;
             overflow-x: hidden;
+            /* 모바일에서 당겨서 새로고침 / 스크롤 체이닝 방지 */
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
         }
 
-        /* ★ 추가된 검은색 암전 오버레이 (화면 전체를 고르게 덮음) ★ */
         #black-overlay {
             position: absolute;
             top: 0;
@@ -63,16 +85,38 @@
             transition: opacity 2s ease;
         }
 
+        #end-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2.2s ease;
+        }
+
+        #end-text span {
+            color: #ffffff;
+            font-size: min(8vw, 34px);
+            font-weight: 300;
+            letter-spacing: 6px;
+        }
+
         .screen {
             display: none;
+            touch-action: manipulation;
             padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 20px);
-            height: 100%;
+            min-height: 100%;
             flex-direction: column;
         }
 
         .screen.active {
             display: flex;
-            animation: fadeSlideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
         .hidden {
@@ -190,25 +234,6 @@
             font-weight: 700;
         }
 
-        #error-message {
-            color: var(--error);
-            font-weight: 700;
-            margin: -10px 0 20px 36px;
-            font-size: 15px;
-            letter-spacing: 1px;
-            animation: blink 0.5s infinite;
-        }
-
-        .shake {
-            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
-            color: var(--error);
-        }
-
-        .shake .checkmark {
-            border-color: var(--error);
-            background-color: rgba(255, 59, 48, 0.1);
-        }
-
         .bottom-spacer {
             height: 100px;
         }
@@ -259,59 +284,62 @@
             margin-bottom: 15px;
         }
 
-        #push-notification {
-            position: absolute;
-            top: -100px;
-            left: 16px;
-            right: 16px;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 16px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            display: flex;
-            gap: 12px;
-            transition: top 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-            z-index: 9999;
+        /* 화면 중앙에 크게 뜨는 ERROR 플래시 */
+        #error-flash {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(.8);
+            z-index: 300;
+            color: var(--error);
+            font-weight: 800;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            letter-spacing: 2px;
         }
 
-        #push-notification.show {
-            top: calc(var(--safe-top) + 10px);
+        #error-flash {
+            max-width: 90%;
+            word-break: keep-all;
+            white-space: pre-line;
         }
 
-        .push-icon {
-            font-size: 24px;
-            background: #000;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        #error-flash.show {
+            font-size: min(8vw, 34px);
+            animation: errShow 1.9s ease forwards;
         }
 
-        .push-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
+        @keyframes errShow {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(.85);
+            }
+
+            15% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            60% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
 
-        .push-title {
-            font-weight: 600;
-            font-size: 15px;
-            color: #000;
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+            color: var(--error);
         }
 
-        .push-time {
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        .push-body {
-            font-size: 14px;
-            color: #333;
-            line-height: 1.4;
+        .shake .checkmark {
+            border-color: var(--error);
+            background-color: rgba(255, 59, 48, 0.1);
         }
 
         @keyframes fadeSlideIn {
@@ -323,18 +351,6 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
-            }
-        }
-
-        @keyframes blink {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0;
             }
         }
 
@@ -361,204 +377,1208 @@
                 transform: translate3d(6px, 0, 0);
             }
         }
+
+        /* ---- 대기 화면(검정화면에서 알림 기다리는 중) ---- */
+        #wait-hint {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: calc(var(--safe-bottom) + 40px);
+            text-align: center;
+            color: rgba(255, 255, 255, .4);
+            font-size: 13px;
+            letter-spacing: .5px;
+            z-index: 150;
+            opacity: 0;
+            transition: opacity .6s ease;
+        }
+
+        #wait-hint.show {
+            opacity: 1;
+        }
+
+        /* ---- 앱 설치 배너 ----
+           position:fixed 로 두어야 컨테이너가 스크롤돼도 화면 하단에 고정된다.
+           (absolute 였을 때는 스크롤 콘텐츠와 함께 밀려 올라가 보이지 않는 경우가 있었음) */
+        #install-banner {
+            position: fixed;
+            left: 50%;
+            bottom: calc(var(--safe-bottom) + 12px);
+            width: min(406px, calc(100% - 24px));
+            z-index: 500;
+            background: rgba(20, 20, 22, .94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 16px;
+            padding: 12px 12px 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translate(-50%, calc(100% + var(--safe-bottom) + 28px));
+            transition: transform .5s cubic-bezier(.2, .8, .2, 1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+        }
+
+        #install-banner.show {
+            transform: translate(-50%, 0);
+        }
+
+        #install-banner img {
+            width: 44px;
+            height: 44px;
+            border-radius: 11px;
+            flex: none;
+        }
+
+        #install-banner .ib-txt {
+            flex: 1;
+            min-width: 0;
+            color: #fff;
+        }
+
+        #install-banner .ib-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            margin-bottom: 2px;
+            word-break: keep-all;
+        }
+
+        #install-banner .ib-sub {
+            font-size: 11.5px;
+            /* 작은 글씨라 명도 대비를 높였다 (#8e8e93 -> 흰색 62%) */
+            color: rgba(255, 255, 255, .62);
+            line-height: 1.4;
+            word-break: keep-all;
+        }
+
+        /* 터치 타겟은 최소 44px (iOS HIG / Material 접근성 기준) */
+        #install-banner .ib-btn {
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 11px;
+            min-height: 44px;
+            padding: 0 15px;
+            font-size: 13.5px;
+            font-weight: 700;
+            white-space: nowrap;
+            flex: none;
+            touch-action: manipulation;
+            transition: transform .15s ease, opacity .15s ease;
+        }
+
+        /* tap-highlight 를 껐기 때문에 :active 로 눌린 느낌을 직접 준다 */
+        #install-banner .ib-btn:active {
+            transform: scale(.94);
+            opacity: .82;
+        }
+
+        #install-banner .ib-btn[disabled] {
+            opacity: .55;
+        }
+
+        #install-banner .ib-close {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, .55);
+            font-size: 16px;
+            line-height: 1;
+            width: 44px;
+            height: 44px;
+            margin-right: -8px;
+            flex: none;
+            touch-action: manipulation;
+            transition: transform .15s ease;
+        }
+
+        #install-banner .ib-close:active {
+            transform: scale(.86);
+        }
+
+        /* ---- 설치 안내 시트 (iOS / 인앱 브라우저 / 기타 브라우저 공용) ---- */
+        #install-sheet {
+            position: fixed;
+            inset: 0;
+            z-index: 600;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        #install-sheet.show {
+            display: flex;
+        }
+
+        #install-sheet .sheet-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, .72);
+            animation: sheetFade .25s ease forwards;
+        }
+
+        #install-sheet .sheet {
+            position: relative;
+            width: min(430px, 100%);
+            max-height: 86dvh;
+            overflow-y: auto;
+            background: #1c1c1e;
+            border-radius: 20px 20px 0 0;
+            padding: 10px 20px calc(var(--safe-bottom) + 16px);
+            color: #fff;
+            animation: sheetUp .32s cubic-bezier(.2, .8, .2, 1) forwards;
+        }
+
+        @keyframes sheetFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes sheetUp {
+            from { transform: translateY(18px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        #install-sheet .sheet-grabber {
+            width: 36px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, .22);
+            margin: 0 auto 16px;
+        }
+
+        #install-sheet .sheet h3 {
+            font-size: 16.5px;
+            line-height: 1.45;
+            margin-bottom: 14px;
+            word-break: keep-all;
+        }
+
+        #install-sheet .sheet ol {
+            margin: 0 0 4px 18px;
+            font-size: 14px;
+            line-height: 1.9;
+            color: #e5e5e5;
+            word-break: keep-all;
+        }
+
+        #install-sheet .sheet button {
+            margin-top: 12px;
+            width: 100%;
+            min-height: 48px;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            touch-action: manipulation;
+            transition: transform .15s ease, opacity .15s ease;
+        }
+
+        #install-sheet .sheet button:active {
+            transform: scale(.98);
+            opacity: .85;
+        }
+
+        #install-sheet .sheet-primary {
+            background: #fff;
+            color: #000;
+        }
+
+        #install-sheet .sheet-secondary {
+            background: rgba(255, 255, 255, .12);
+            color: #fff;
+        }
+
+        /* 설치 UI 의 움직임만 줄인다 (작품 본편 연출은 그대로 유지) */
+        @media (prefers-reduced-motion: reduce) {
+            #install-banner {
+                transition-duration: .01ms;
+            }
+
+            #install-sheet .sheet,
+            #install-sheet .sheet-backdrop {
+                animation-duration: .01ms;
+            }
+        }
+
+        /* ---- 스크롤바 완전히 숨김 ---- */
+        html,
+        body,
+        #mobile-container,
+        .screen,
+        * {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
+        /* ================= 새 화면들 ================= */
+        .dark-screen {
+            background-color: #000;
+            color: #fff;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        #mobile-container:has(.dark-screen.active) {
+            background-color: #000;
+        }
+
+        .tap-guide {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: calc(var(--safe-bottom) + 26px);
+            text-align: center;
+            font-size: 12.5px;
+            letter-spacing: .5px;
+            color: rgba(255, 255, 255, .35);
+            animation: pulseGuide 1.6s ease-in-out infinite;
+        }
+
+        @keyframes pulseGuide {
+
+            0%,
+            100% {
+                opacity: .25;
+            }
+
+            50% {
+                opacity: .7;
+            }
+        }
+
+        /* 제N조 카드 */
+        .article-card {
+            width: 100%;
+        }
+
+        .article-code {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--error);
+            margin-bottom: 14px;
+        }
+
+        .article-title {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.45;
+        }
+
+        .article-title .not-met {
+            color: var(--error);
+        }
+
+        /* 알림 플러드 화면 */
+        #screen-flood {
+            justify-content: flex-start;
+        }
+
+        #screen-flood .flood-header {
+            padding-top: 10px;
+            margin-bottom: 14px;
+        }
+
+        #screen-flood .flood-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .noti-bubble {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, .9);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateY(-10px) scale(.96);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
+        }
+
+        .noti-bubble.show {
+            animation: noteDrop .45s cubic-bezier(.2, .8, .2, 1) forwards;
+        }
+
+        @keyframes noteDrop {
+            0% {
+                opacity: 0;
+                transform: translateY(-14px) scale(.94);
+            }
+
+            60% {
+                opacity: 1;
+                transform: translateY(2px) scale(1.01);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .noti-bubble .noti-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            flex: none;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .noti-bubble .noti-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .noti-bubble .noti-app {
+            font-size: 11px;
+            color: #8e8e93;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .noti-bubble .noti-text {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: #111;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 비교 분석 화면 */
+        #screen-compare .compare-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, .5);
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        #screen-compare .compare-value {
+            font-size: min(15vw, 64px);
+            font-weight: 800;
+            color: var(--error);
+            opacity: 0;
+            transform: scale(.7);
+        }
+
+        #screen-compare .compare-value.show {
+            animation: compareIn .7s cubic-bezier(.2, .8, .2, 1) forwards;
+        }
+
+        @keyframes compareIn {
+            0% {
+                opacity: 0;
+                transform: scale(.6);
+            }
+
+            60% {
+                opacity: 1;
+                transform: scale(1.08);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* 약관 위반 화면 */
+        #screen-violation {
+            justify-content: flex-start;
+        }
+
+        #screen-violation .violation-count {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--error);
+            margin: 10px 0 20px;
+            opacity: 0;
+        }
+
+        #screen-violation .violation-count.show {
+            animation: fadeSlideIn .6s ease forwards;
+        }
+
+        .violation-item {
+            font-size: 15px;
+            font-weight: 600;
+            color: #eaeaea;
+            background: rgba(255, 255, 255, .06);
+            border-radius: 10px;
+            padding: 9px 12px;
+            margin-bottom: 7px;
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+
+        .violation-item.show {
+            animation: fadeSlideIn .35s ease forwards;
+        }
+
+        .violation-item.negative {
+            color: #ffb4ae;
+            background: rgba(255, 59, 48, .14);
+        }
+
+        .yesno-box {
+            margin-top: 22px;
+            margin-bottom: calc(var(--safe-bottom) + 60px);
+            opacity: 0;
+        }
+
+        .yesno-box.show {
+            animation: fadeSlideIn .5s ease forwards;
+        }
+
+        .yesno-question {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+
+        .yesno-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .yesno-btns button {
+            flex: 1;
+            min-height: 48px;
+            padding: 13px 0;
+            border-radius: 10px;
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            touch-action: manipulation;
+            transition: transform .15s ease, opacity .15s ease;
+        }
+
+        .yesno-btns button:active {
+            transform: scale(.97);
+            opacity: .85;
+        }
+
+        #btn-yes {
+            background: #2c2c2e;
+            color: #fff;
+        }
+
+        #btn-no {
+            background: #fff;
+            color: #000;
+        }
+
+        .help-note {
+            margin-top: 40px;
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, .32);
+            line-height: 1.6;
+            opacity: 0;
+        }
+
+        .help-note.show {
+            animation: fadeSlideIn 1.2s ease forwards;
+        }
     </style>
 </head>
 
 <body>
     <div id="mobile-container">
-        <!-- ★ 추가된 오버레이 요소 ★ -->
-        <div id="black-overlay" class="hidden"></div>
+        <div id="black-overlay"></div>
+        <div id="end-text"><span>juspeace</span></div>
+        <div id="error-flash"></div>
+        <div id="wait-hint">알림을 확인해주세요</div>
 
-        <!-- 푸시 알림 -->
-        <div id="push-notification">
-            <div class="push-icon">⚙️</div>
-            <div class="push-content">
-                <div class="push-header"><span class="push-title">시스템 알림</span><span class="push-time">방금</span></div>
-                <div class="push-body">새로운 약관이 추가되었습니다. 지금 바로 확인하고 동의해주세요.</div>
-            </div>
-        </div>
-
-        <!-- 1. 초기 팝업 -->
+        <!-- 1. 초기 동의 (사이트에만 표시, 잠금알림 없음) -->
         <section id="screen-1" class="screen active">
             <div class="popup">
-                <p>본 서비스를 이용하기 위해서는 다음의 조건에 동의해야 합니다.</p>
+                <p>본 서비스를 계속 이용하기 위해서는 아래 항목에 동의해야 합니다.</p>
                 <label class="checkbox-container">
                     <input type="checkbox" id="init-agree">
                     <span class="checkmark"></span>
-                    <span class="label-text">동의합니다</span>
+                    <span class="label-text">동의하시겠습니까?</span>
                 </label>
             </div>
         </section>
 
-        <!-- 2. 체크리스트 및 에러 -->
-        <section id="screen-2" class="screen">
-            <div class="header-area">
-                <h2 class="section-title">추가 약관 동의</h2>
-                <p class="subtitle">처음에는 몇 개 없었던 약관이 계속 추가됨.</p>
+        <!-- 2. 제1~3조 미충족 안내 -->
+        <section id="screen-article" class="screen dark-screen">
+            <div class="article-card">
+                <div class="article-code" id="article-code"></div>
+                <div class="article-title" id="article-title"></div>
             </div>
-            <div id="checklist-container"></div>
-            <div id="error-section" class="hidden">
-                <label class="checkbox-container target-item" id="myself-label">
-                    <input type="checkbox" id="myself-checkbox">
-                    <span class="checkmark"></span>
-                    <span class="label-text">자기 자신으로 살아가기</span>
-                </label>
-                <p id="error-message" class="hidden">ERROR</p>
-            </div>
-            <div class="bottom-spacer"></div>
+            <div class="tap-guide">화면을 눌러 계속하기</div>
         </section>
 
-        <!-- 3. 결말부 -->
-        <section id="screen-3" class="screen dark-mode">
+        <!-- 3. 알림 폭주 -->
+        <section id="screen-flood" class="screen dark-screen">
+            <div class="flood-header">
+                <h2>알림 5개</h2>
+            </div>
+            <div id="flood-container" style="width:100%;"></div>
+            <div class="tap-guide" id="flood-guide" style="opacity:0;">화면을 눌러 계속하기</div>
+        </section>
+
+        <!-- 4. 비교 분석 결과 -->
+        <section id="screen-compare" class="screen dark-screen">
+            <div class="compare-label">비교 분석 결과</div>
+            <div class="compare-value" id="compare-value">하위 38%</div>
+            <div class="tap-guide" id="compare-guide" style="opacity:0;">화면을 눌러 계속하기</div>
+        </section>
+
+        <!-- 5. 약관 위반 카운트 + 20개 항목 폭주 + 예/아니요 -->
+        <section id="screen-violation" class="screen dark-screen" style="align-items:stretch; text-align:left;">
+            <div class="violation-count" id="violation-count">오늘 약관 위반 17건</div>
+            <div id="violation-list"></div>
+            <div class="yesno-box" id="yesno-box">
+                <div class="yesno-question">모든 항목에 동의하지 않으시겠습니까?</div>
+                <div class="yesno-btns">
+                    <button id="btn-yes">예</button>
+                    <button id="btn-no">아니요</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. 결말부: 위로의 문장 + 최종 동의 -->
+        <section id="screen-3" class="screen dark-mode dark-screen">
             <div class="final-terms">
-                <h2>&lt;청소년 이용약관&gt;</h2>
-                <div class="comfort-text">
-                    <p>실패해도 됩니다.</p>
-                    <p>꿈이 없어도 됩니다.</p>
-                    <p>가끔은 아무것도 하지 않아도 됩니다.</p><br>
-                    <p>그리고 무엇보다,</p>
-                    <p>다른 사람의 잣대에<br>기준을 맞추지 않아도 됩니다.</p>
+                <div class="comfort-text" id="comfort-text">
+                    <p>완벽한 친구가 아니여도 괜찮습니다.</p>
+                    <p>학생으로서 완벽할 필요는 없습니다.</p>
+                    <p>완벽한 사람은 없습니다.</p>
+                    <p>자신을 잃어가기보다는<br>자신을 챙기세요.</p>
+                    <p>스스로를 잃지 마세요.</p>
                 </div>
                 <div class="final-agree-box">
                     <p class="final-guide">마지막 항목:</p>
                     <label class="checkbox-container final-item">
                         <input type="checkbox" id="final-agree">
                         <span class="checkmark"></span>
-                        <span class="label-text">나 자신으로 살아가는 것에 동의합니다.</span>
+                        <span class="label-text">위와 같이 살 것을 동의하시겠습니까?</span>
                     </label>
                 </div>
+                <p class="help-note" id="help-note">힘든 순간이 있다면 혼자 견디지 않아도 됩니다.<br>청소년 상담 1388 · 정신건강 위기상담 1577-0199</p>
             </div>
         </section>
+
+
+        <div id="install-banner" role="region" aria-label="앱 설치 안내" aria-hidden="true">
+            <img id="install-icon" src="./icons/icon-192.png" width="44" height="44" alt="" decoding="async">
+            <div class="ib-txt">
+                <div class="ib-title" id="ib-title">앱으로 설치하기</div>
+                <div class="ib-sub" id="ib-sub">설치하고 알림도 받아보세요</div>
+            </div>
+            <button class="ib-btn" id="ib-install" type="button">설치</button>
+            <button class="ib-close" id="ib-close" type="button" aria-label="설치 안내 닫기">✕</button>
+        </div>
+
+        <div id="install-sheet" role="dialog" aria-modal="true" aria-labelledby="isheet-title" aria-hidden="true">
+            <div class="sheet-backdrop" id="isheet-backdrop"></div>
+            <div class="sheet">
+                <div class="sheet-grabber" aria-hidden="true"></div>
+                <h3 id="isheet-title"></h3>
+                <ol id="isheet-steps"></ol>
+                <button type="button" class="sheet-primary hidden" id="isheet-action"></button>
+                <button type="button" class="sheet-secondary" id="isheet-close">확인했어요</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const screen1 = document.getElementById('screen-1');
-            const screen2 = document.getElementById('screen-2');
-            const screen3 = document.getElementById('screen-3');
-            const container = document.getElementById('mobile-container');
+        (function () {
+            "use strict";
 
-            const vibrate = (pattern) => {
-                if (navigator.vibrate) navigator.vibrate(pattern);
-            };
+            // ---------- 아이콘 / 매니페스트 ----------
+            // 아이콘과 매니페스트는 실제 파일로 제공한다.
+            // base64 data: URI 로 내장하면 브라우저가 아이콘을 검증하지 못해
+            // "설치 가능(installable)" 판정을 받지 못하는 경우가 있다.
+            const ICON_192_URI = new URL("./icons/icon-192.png", location.href).href;
 
-            // 1번 화면 -> 2번 화면 전환
-            document.getElementById('init-agree').addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    vibrate(50);
-                    setTimeout(() => {
-                        screen1.classList.remove('active');
-                        screen2.classList.add('active');
-                        startChecklistPressure();
-                    }, 400);
+            // ---------- SERVICE WORKER ----------
+            // fetch 핸들러를 가진 sw.js 가 등록되어 있어야 Chromium 계열에서 설치가 가능하고,
+            // 설치 후 오프라인에서도 앱이 열린다.
+            let swReady = null;
+            if ("serviceWorker" in navigator && location.protocol !== "file:") {
+                swReady = navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => null);
+            }
+
+            function sendNotification(title, body, opts) {
+                opts = opts || {};
+                if (!("Notification" in window) || Notification.permission !== "granted") {
+                    return Promise.resolve(false);
                 }
-            });
+                if (!("serviceWorker" in navigator)) return Promise.resolve(false);
+                return navigator.serviceWorker.ready.then((reg) => {
+                    reg.active && reg.active.postMessage({
+                        type: "SHOW_NOTIFICATION", title, body,
+                        tag: opts.tag, icon: ICON_192_URI, data: opts.data
+                    });
+                    return true;
+                }).catch(() => false);
+            }
 
-            const pressureTerms = [
-                "좋은 학생", "좋은 친구", "좋은 자녀",
-                "긍정적인 사람", "성실한 사람", "꿈이 있는 사람",
-                "뒤처지지 않는 사람", "남들과 비교해도 괜찮은 사람"
-            ];
+            async function ensureNotifPermission() {
+                if (!("Notification" in window)) return false;
+                if (Notification.permission === "granted") return true;
+                if (Notification.permission === "denied") return false;
+                try {
+                    const res = await Notification.requestPermission();
+                    return res === "granted";
+                } catch (e) { return false; }
+            }
 
-            function startChecklistPressure() {
-                const listContainer = document.getElementById('checklist-container');
+            // ================= 화면 로직 =================
+            const screen1 = document.getElementById('screen-1');
+            const screenArticle = document.getElementById('screen-article');
+            const screenFlood = document.getElementById('screen-flood');
+            const screenCompare = document.getElementById('screen-compare');
+            const screenViolation = document.getElementById('screen-violation');
+            const screen3 = document.getElementById('screen-3');
+            const allScreens = [screen1, screenArticle, screenFlood, screenCompare, screenViolation, screen3];
+            const container = document.getElementById('mobile-container');
+            const overlay = document.getElementById('black-overlay');
+            const errorFlash = document.getElementById('error-flash');
 
-                pressureTerms.forEach((term, index) => {
-                    setTimeout(() => {
-                        const label = document.createElement('label');
-                        label.className = 'checkbox-container list-item';
-                        label.innerHTML = `<input type="checkbox" checked disabled><span class="checkmark"></span><span class="label-text">${term}</span>`;
-                        listContainer.appendChild(label);
+            const vibrate = (pattern) => { if (navigator.vibrate) navigator.vibrate(pattern); };
+            function darken(v) { overlay.style.opacity = v; }
+            let flowStarted = false;
+            // (신규) 설치 배너를 영구적으로 숨기기 위한 플래그. 한 번 true가 되면
+            // 이후 어떤 코드 경로로도 배너가 다시 나타나지 않습니다.
+            let installBannerRetired = false;
 
-                        requestAnimationFrame(() => {
-                            label.classList.add('show');
-                            label.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                        });
-                        vibrate(20);
-                    }, index * 800 + 500);
-                });
+            function goTo(target) {
+                const current = allScreens.find(s => s.classList.contains('active'));
+                if (target.classList.contains('dark-screen')) container.style.backgroundColor = '#000';
 
-                setTimeout(showFakePushNotification, 4500);
+                if (!current || current === target) {
+                    allScreens.forEach(s => s.classList.remove('active'));
+                    target.style.opacity = '1';
+                    target.classList.add('active');
+                    return;
+                }
+
+                current.style.transition = 'opacity 1s ease';
+                current.style.opacity = '0';
 
                 setTimeout(() => {
-                    const errorSection = document.getElementById('error-section');
-                    errorSection.classList.remove('hidden');
-                    errorSection.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }, pressureTerms.length * 800 + 1500);
+                    current.classList.remove('active');
+                    current.style.opacity = '';
+                    current.style.transition = '';
+
+                    target.style.opacity = '0';
+                    target.classList.add('active');
+                    void target.offsetWidth;
+                    target.style.transition = 'opacity 1s ease';
+                    target.style.opacity = '1';
+                    setTimeout(() => { target.style.transition = ''; }, 1050);
+                }, 1000);
             }
 
-            function showFakePushNotification() {
-                vibrate([300, 100, 300]);
-                const push = document.getElementById('push-notification');
-                push.classList.add('show');
-                setTimeout(() => push.classList.remove('show'), 3500);
+            function scheduleLockNotification(title, body, tag) {
+                setTimeout(() => {
+                    ensureNotifPermission().then(granted => {
+                        if (granted) sendNotification(title, body, { tag });
+                    });
+                }, 5000);
             }
 
-            const mySelfBtn = document.getElementById('myself-checkbox');
-            const mySelfLabel = document.getElementById('myself-label');
-            const errorMsg = document.getElementById('error-message');
-            let errorCount = 0;
-            let isTransitioning = false;
-
-            // ERROR 버튼 클릭 로직
-            mySelfBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (isTransitioning) return;
-
-                errorCount++;
-                errorMsg.classList.remove('hidden');
-                vibrate([100, 50, 100]);
-
-                mySelfLabel.classList.remove('shake');
-                void mySelfLabel.offsetWidth;
-                mySelfLabel.classList.add('shake');
-
-                // ★ 수정된 암전 로직 (오버레이 활용) ★
-                if (errorCount >= 2) {
-                    isTransitioning = true;
-
-                    // 1. 검은색 레이어를 서서히 띄워 화면 전체를 고르게 가림
-                    const overlay = document.getElementById('black-overlay');
-                    overlay.classList.remove('hidden');
-                    void overlay.offsetWidth; // 렌더링 동기화
-                    overlay.style.opacity = 1;
-
-                    // 2. 2초 뒤 화면이 완벽히 까매지면, 뒤에서 화면을 교체
-                    setTimeout(() => {
-                        screen2.classList.remove('active');
-                        container.style.backgroundColor = "#000"; // 배경 완전 검은색 고정
-                        overlay.classList.add('hidden'); // 전환 완료 후 오버레이 숨김
-
-                        screen3.classList.add('active');
-                        playFinalAnimation();
-                    }, 2000);
+            // (신규) 설치 배너를 완전히 제거하는 함수. installFlow 정의 이전에도
+            // 호출될 수 있으므로 여기서 안전하게 처리합니다.
+            function retireInstallBanner() {
+                installBannerRetired = true;
+                const banner = document.getElementById('install-banner');
+                if (banner) {
+                    banner.classList.remove('show');
+                    banner.remove(); // DOM에서 완전히 제거 -> 다시는 노출되지 않음
                 }
+            }
+
+            // ---- 1번 화면: 초기 동의 ----
+            document.getElementById('init-agree').addEventListener('change', async (e) => {
+                if (!e.target.checked) return;
+                flowStarted = true;
+                retireInstallBanner(); // 흐름이 시작되면 설치 배너는 영구히 사라짐
+                vibrate(50);
+                await ensureNotifPermission();
+                setTimeout(() => {
+                    darken(1);
+                    setTimeout(() => {
+                        goTo(screenArticle);
+                        darken(0);
+                        showArticle(0);
+                    }, 900);
+                }, 350);
             });
 
-            // 결말부 문구 애니메이션
-            function playFinalAnimation() {
-                const texts = document.querySelectorAll('.comfort-text p');
-                texts.forEach((p, idx) => {
-                    p.style.animation = `fadeSlideIn 1.5s ease forwards ${idx * 1.5}s`;
-                });
+            // ---- 2번 화면 ----
+            const articles = [
+                { code: "제1조 미충족", need: "명확한 미래 목표가", rest: "있어야 합니다." },
+                { code: "제2조 미충족", need: "좋은 친구가", rest: "되어야 합니다." },
+                { code: "제3조 미충족", need: "학업 성적이", rest: "부족합니다." }
+            ];
+            let articleIndex = 0;
+            let articleBusy = false;
 
-                const finalBox = document.querySelector('.final-agree-box');
-                finalBox.style.animation = `fadeSlideIn 1.5s ease forwards ${texts.length * 1.5}s`;
+            function articleFullText(a) { return `${a.need} ${a.rest}`; }
+
+            function showArticle(i) {
+                const a = articles[i];
+                document.getElementById('article-code').textContent = `[${a.code}]`;
+                document.getElementById('article-title').innerHTML =
+                    `<span class="not-met">${a.need}</span><br>${a.rest}`;
+                vibrate(30);
             }
 
-            // 최종 완료 (완전 암전)
+            screenArticle.addEventListener('click', () => {
+                if (articleBusy) return;
+                articleBusy = true;
+
+                const finished = articles[articleIndex];
+                scheduleLockNotification(`[${finished.code}]`, articleFullText(finished), "article-" + articleIndex);
+
+                const card = document.querySelector('#screen-article .article-card');
+                const guide = document.querySelector('#screen-article .tap-guide');
+
+                card.style.transition = 'opacity 0.9s ease';
+                card.style.opacity = '0';
+                guide.style.transition = 'opacity 0.9s ease';
+                guide.style.opacity = '0';
+
+                setTimeout(() => {
+                    articleIndex++;
+                    if (articleIndex < articles.length) {
+                        showArticle(articleIndex);
+                        card.style.opacity = '0';
+                        void card.offsetWidth;
+                        card.style.transition = 'opacity 0.9s ease';
+                        card.style.opacity = '1';
+                        guide.style.opacity = '1';
+                        setTimeout(() => { articleBusy = false; }, 950);
+                    } else {
+                        goTo(screenFlood);
+                        startFlood();
+                    }
+                }, 1000);
+            });
+
+            // ---- 3번 화면 ----
+            const floodItems = [
+                { app: "학교 알리미", text: "국어 수행평가 제출 D-1" },
+                { app: "진로 시스템", text: "명확한 진로 확정 미응답" },
+                { app: "메시지", text: "담임 선생님 메시지" },
+                { app: "학원 앱", text: "학원 숙제 미완료" },
+                { app: "단체 채팅", text: "친구 단톡방 37개 메시지" }
+            ];
+
+            function startFlood() {
+                const listEl = document.getElementById('flood-container');
+                const guide = document.getElementById('flood-guide');
+                listEl.innerHTML = '';
+                guide.style.opacity = '0';
+                ensureNotifPermission();
+
+                floodItems.forEach((item, idx) => {
+                    setTimeout(() => {
+                        const bubble = document.createElement('div');
+                        bubble.className = 'noti-bubble';
+                        bubble.innerHTML = `<div class="noti-icon">🔔</div>
+                    <div class="noti-body">
+                        <div class="noti-app">${item.app}</div>
+                        <div class="noti-text">${item.text}</div>
+                    </div>`;
+                        listEl.appendChild(bubble);
+                        requestAnimationFrame(() => bubble.classList.add('show'));
+                        vibrate(25);
+                        sendNotification(item.app, item.text, { tag: "flood-" + idx });
+                    }, idx * 450);
+                });
+
+                setTimeout(() => {
+                    guide.style.opacity = '1';
+                }, floodItems.length * 450 + 500);
+            }
+
+            let floodBusy = false;
+            screenFlood.addEventListener('click', () => {
+                if (floodBusy) return;
+                if (document.getElementById('flood-guide').style.opacity !== '1') return;
+                floodBusy = true;
+                goTo(screenCompare);
+                setTimeout(startCompare, 2100);
+            });
+
+            // ---- 4번 화면 ----
+            let compareBusy = false;
+            function startCompare() {
+                compareBusy = false;
+                const val = document.getElementById('compare-value');
+                const guide = document.getElementById('compare-guide');
+                guide.style.opacity = '0';
+                val.classList.remove('show');
+                void val.offsetWidth;
+                val.classList.add('show');
+                setTimeout(() => vibrate([250, 120, 250, 120, 250]), 500);
+                setTimeout(() => {
+                    guide.style.transition = 'opacity 0.9s ease';
+                    guide.style.opacity = '1';
+                }, 1800);
+            }
+
+            screenCompare.addEventListener('click', () => {
+                if (compareBusy) return;
+                const guide = document.getElementById('compare-guide');
+                if (guide.style.opacity !== '1') return;
+                compareBusy = true;
+                goTo(screenViolation);
+                setTimeout(startViolation, 300);
+            });
+
+            // ---- 5번 화면 ----
+            const violationWords = [
+                "수행평가 제출 지연", "진로 로드맵 미제출", "학습 목표 미달성",
+                "자기관리 부족", "진로 계획 미수립", "목표 의식 결여",
+                "성실도 기준 미달", "책임감 지수 낮음", "실행력 부족",
+                "노력 지수 미달", "자기주도성 부족", "협업 태도 미흡",
+                "생활 습관 불량", "감정 조절 미흡", "소통 능력 부족",
+                "적응력 부족", "성장 가능성 낮음", "평균 이하 수준",
+                "개선 여지 많음", "종합 평가 미흡"
+            ];
+
+            function startViolation() {
+                const countEl = document.getElementById('violation-count');
+                const listEl = document.getElementById('violation-list');
+                const yesnoBox = document.getElementById('yesno-box');
+                listEl.innerHTML = '';
+                yesnoBox.classList.remove('show');
+                countEl.classList.remove('show');
+
+                setTimeout(() => { countEl.classList.add('show'); vibrate(40); }, 200);
+
+                let delay = 950;
+                let elapsed = 900;
+                violationWords.forEach((word, idx) => {
+                    elapsed += delay;
+                    setTimeout(() => {
+                        const item = document.createElement('div');
+                        item.className = 'violation-item';
+                        if (idx >= 10) item.classList.add('negative');
+                        item.textContent = `[${word}]`;
+                        listEl.appendChild(item);
+                        requestAnimationFrame(() => item.classList.add('show'));
+                        item.scrollIntoView({ behavior: 'auto', block: 'end' });
+                        vibrate(15);
+                    }, elapsed);
+                    delay = Math.max(delay - 42, 90);
+                });
+
+                setTimeout(() => {
+                    yesnoBox.classList.add('show');
+                    yesnoBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, elapsed + 500);
+            }
+
+            let noCount = 0;
+            function handleYesNoClick() {
+                noCount++;
+                vibrate([80, 40, 80]);
+
+                errorFlash.textContent = '오류가 발생했습니다.';
+                errorFlash.classList.remove('show');
+                void errorFlash.offsetWidth;
+                errorFlash.classList.add('show');
+
+                if (noCount >= 10) {
+                    setTimeout(() => {
+                        darken(1);
+                        setTimeout(() => {
+                            goTo(screen3);
+                            container.style.backgroundColor = "#000";
+                            darken(0);
+                            playFinalAnimation();
+                        }, 1600);
+                    }, 500);
+                }
+            }
+            document.getElementById('btn-no').addEventListener('click', handleYesNoClick);
+            document.getElementById('btn-yes').addEventListener('click', handleYesNoClick);
+
+            // ---- 6번 화면 ----
+            function playFinalAnimation() {
+                const texts = document.querySelectorAll('#comfort-text p');
+                texts.forEach((p, idx) => {
+                    p.style.animation = `fadeSlideIn 1.8s ease forwards ${idx * 1.8}s`;
+                });
+                const finalBox = document.querySelector('.final-agree-box');
+                finalBox.style.animation = `fadeSlideIn 1.5s ease forwards ${texts.length * 1.8}s`;
+                const helpNote = document.getElementById('help-note');
+                setTimeout(() => helpNote.classList.add('show'), (texts.length * 1.8 + 1.8) * 1000);
+            }
+
             document.getElementById('final-agree').addEventListener('change', (e) => {
                 if (e.target.checked) {
                     vibrate([50, 50, 50]);
-
-                    // 마지막 체크 시 다시 한 번 오버레이를 덮어 완전 암전시킴
-                    const overlay = document.getElementById('black-overlay');
-                    overlay.classList.remove('hidden');
-                    void overlay.offsetWidth;
-                    overlay.style.opacity = 1;
+                    darken(1);
+                    setTimeout(() => {
+                        document.getElementById('end-text').style.opacity = '1';
+                    }, 1900);
                 }
             });
-        });
+
+            // ================= 앱 설치 (초기에만 노출, 이후 영구 제거) =================
+            (function installFlow() {
+                const banner = document.getElementById("install-banner");
+                const ibTitle = document.getElementById("ib-title");
+                const ibSub = document.getElementById("ib-sub");
+                const ibInstall = document.getElementById("ib-install");
+                const ibClose = document.getElementById("ib-close");
+                const sheet = document.getElementById("install-sheet");
+                const sheetTitle = document.getElementById("isheet-title");
+                const sheetSteps = document.getElementById("isheet-steps");
+                const sheetAction = document.getElementById("isheet-action");
+                const sheetClose = document.getElementById("isheet-close");
+                const sheetBackdrop = document.getElementById("isheet-backdrop");
+                if (!banner) return; // 이미 제거된 경우 대비
+
+                const ua = navigator.userAgent || "";
+
+                // ---- 플랫폼 판별 ----
+                // iPadOS 13+ 는 UA 에 iPad 대신 Macintosh 로 보고되므로 터치 지원 여부를 함께 본다.
+                const isIOS = /iphone|ipad|ipod/i.test(ua) ||
+                    (/Macintosh/i.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+                const isAndroid = /android/i.test(ua);
+                // 카카오톡·인스타그램 등 인앱 브라우저에서는 홈 화면 추가/설치가 아예 불가능하다.
+                const inApp = /KAKAOTALK|Instagram|FBAN|FBAV|FB_IAB|FBIOS|Line\/|NAVER\(inapp|DaumApps|Threads|Snapchat|TikTok|everytimeApp|KAKAOSTORY/i.test(ua);
+
+                const store = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { } };
+                const load = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+
+                const isStandalone = () =>
+                    window.matchMedia("(display-mode: standalone)").matches ||
+                    window.matchMedia("(display-mode: minimal-ui)").matches ||
+                    window.navigator.standalone === true;
+
+                function isInstalled() { return isStandalone() || load("yg_installed") === "1"; }
+                function markInstalled() { store("yg_installed", "1"); closeSheet(); retireInstallBanner(); }
+
+                // ---- 안내 시트 ----
+                const GUIDES = {
+                    ios: {
+                        title: "홈 화면에 추가해서 앱으로 설치하기",
+                        steps: [
+                            "하단(또는 상단)의 공유 버튼을 탭하세요",
+                            "목록에서 “홈 화면에 추가”를 선택하세요",
+                            "오른쪽 위 “추가”를 누르면 설치 완료예요"
+                        ]
+                    },
+                    android: {
+                        title: "홈 화면에 추가해서 앱으로 설치하기",
+                        steps: [
+                            "브라우저 오른쪽 위 ⋮ 메뉴를 여세요",
+                            "“앱 설치” 또는 “홈 화면에 추가”를 선택하세요",
+                            "“설치”를 누르면 완료예요"
+                        ]
+                    },
+                    desktop: {
+                        title: "앱으로 설치하기",
+                        steps: [
+                            "주소창 오른쪽의 설치 아이콘을 누르세요",
+                            "또는 브라우저 메뉴에서 “앱으로 설치”를 선택하세요",
+                            "“설치”를 누르면 완료예요"
+                        ]
+                    },
+                    inAppIOS: {
+                        title: "Safari에서 열어야 앱으로 설치할 수 있어요",
+                        steps: [
+                            "화면 구석의 메뉴 버튼을 탭하세요",
+                            "“Safari로 열기”를 선택하세요",
+                            "Safari에서 공유 → “홈 화면에 추가”"
+                        ],
+                        action: "링크 복사하기"
+                    },
+                    inAppAndroid: {
+                        title: "다른 브라우저에서 열어야 앱으로 설치할 수 있어요",
+                        steps: [
+                            "아래 버튼으로 Chrome에서 열어주세요",
+                            "Chrome 오른쪽 위 ⋮ 메뉴를 여세요",
+                            "“앱 설치”를 선택하면 완료예요"
+                        ],
+                        action: "Chrome에서 열기"
+                    }
+                };
+
+                let sheetActionKind = null;
+
+                function openSheet(kind) {
+                    const g = GUIDES[kind];
+                    if (!g) return;
+                    sheetActionKind = kind;
+                    sheetTitle.textContent = g.title;
+                    sheetSteps.innerHTML = "";
+                    g.steps.forEach((s) => {
+                        const li = document.createElement("li");
+                        li.textContent = s;
+                        sheetSteps.appendChild(li);
+                    });
+                    if (g.action) {
+                        sheetAction.textContent = g.action;
+                        sheetAction.classList.remove("hidden");
+                    } else {
+                        sheetAction.classList.add("hidden");
+                    }
+                    sheet.classList.add("show");
+                    sheet.setAttribute("aria-hidden", "false");
+                }
+
+                function closeSheet() {
+                    sheet.classList.remove("show");
+                    sheet.setAttribute("aria-hidden", "true");
+                }
+
+                sheetClose.addEventListener("click", closeSheet);
+                sheetBackdrop.addEventListener("click", closeSheet);
+
+                sheetAction.addEventListener("click", async () => {
+                    if (sheetActionKind === "inAppAndroid") {
+                        // 인앱 브라우저에서 Chrome 으로 탈출 (안드로이드 인텐트)
+                        const scheme = location.protocol.replace(":", "");
+                        window.location.href = "intent://" + location.host + location.pathname + location.search +
+                            "#Intent;scheme=" + scheme + ";package=com.android.chrome;end";
+                        return;
+                    }
+                    // iOS 인앱 브라우저는 프로그램적으로 Safari 를 열 수 없어 링크 복사로 대체
+                    const url = location.href;
+                    let ok = false;
+                    try {
+                        if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(url);
+                            ok = true;
+                        }
+                    } catch (e) { ok = false; }
+                    if (!ok) {
+                        try {
+                            const ta = document.createElement("textarea");
+                            ta.value = url;
+                            ta.setAttribute("readonly", "");
+                            ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+                            document.body.appendChild(ta);
+                            ta.select();
+                            ta.setSelectionRange(0, url.length);
+                            ok = document.execCommand("copy");
+                            document.body.removeChild(ta);
+                        } catch (e) { ok = false; }
+                    }
+                    sheetAction.textContent = ok ? "복사했어요 ✓" : "주소창의 링크를 복사해주세요";
+                });
+
+                // ---- beforeinstallprompt ----
+                // 이 이벤트는 배너를 띄운 뒤에 도착할 수도 있으므로 대기열을 둔다.
+                let deferredPrompt = null;
+                let promptWaiters = [];
+
+                window.addEventListener("beforeinstallprompt", (e) => {
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    const waiters = promptWaiters;
+                    promptWaiters = [];
+                    waiters.forEach((fn) => fn(e));
+                    showBanner(); // 뒤늦게 설치 가능해진 경우에도 배너를 노출
+                });
+
+                window.addEventListener("appinstalled", markInstalled);
+
+                function waitForPrompt(ms) {
+                    if (deferredPrompt) return Promise.resolve(deferredPrompt);
+                    return new Promise((resolve) => {
+                        const onEvt = (e) => { clearTimeout(timer); resolve(e); };
+                        const timer = setTimeout(() => {
+                            promptWaiters = promptWaiters.filter((f) => f !== onEvt);
+                            resolve(null);
+                        }, ms);
+                        promptWaiters.push(onEvt);
+                    });
+                }
+
+                // ---- 배너 ----
+                function showBanner() {
+                    if (installBannerRetired) return; // 영구 제거 상태면 어떤 조건에서도 노출 안 함
+                    if (flowStarted) return;
+                    if (isInstalled()) return;
+                    if (inApp) {
+                        ibTitle.textContent = "브라우저에서 열어주세요";
+                        ibSub.textContent = isIOS
+                            ? "Safari로 열면 설치돼요"
+                            : "Chrome으로 열면 설치돼요";
+                        ibInstall.textContent = "방법 보기";
+                    } else {
+                        ibTitle.textContent = "앱으로 설치하기";
+                        ibSub.textContent = (window.Notification && Notification.permission === "granted")
+                            ? "언제든 다시 볼 수 있어요"
+                            : "설치하고 알림도 받아보세요";
+                    }
+                    banner.classList.add("show");
+                    banner.setAttribute("aria-hidden", "false");
+                }
+
+                ibInstall.addEventListener("click", async () => {
+                    // 인앱 브라우저 / iOS 는 네이티브 설치 프롬프트가 없으므로 안내 시트로 보낸다
+                    if (inApp) {
+                        openSheet(isIOS ? "inAppIOS" : "inAppAndroid");
+                        retireInstallBanner();
+                        return;
+                    }
+                    if (isIOS) {
+                        openSheet("ios");
+                        retireInstallBanner();
+                        return;
+                    }
+
+                    // beforeinstallprompt 가 아직 도착하지 않았을 수 있으니 잠깐 기다린다.
+                    // (사용자 제스처 유효시간 5초 안쪽이라 이후 prompt() 호출이 유지된다)
+                    ibInstall.disabled = true;
+                    const prompt = deferredPrompt || await waitForPrompt(2000);
+                    ibInstall.disabled = false;
+
+                    if (prompt) {
+                        deferredPrompt = null;
+                        try {
+                            prompt.prompt();
+                            const choice = await prompt.userChoice;
+                            if (choice && choice.outcome === "accepted") markInstalled();
+                            else retireInstallBanner(); // 취소해도 배너는 다시 노출하지 않음
+                        } catch (e) {
+                            retireInstallBanner();
+                        }
+                    } else {
+                        // 설치 조건 미충족이거나 지원하지 않는 브라우저 -> alert 대신 시트로 안내
+                        openSheet(isAndroid ? "android" : "desktop");
+                        retireInstallBanner();
+                    }
+                });
+
+                ibClose.addEventListener("click", retireInstallBanner);
+
+                if (isInstalled()) retireInstallBanner();
+                else setTimeout(showBanner, 1200);
+            })();
+
+        })();
     </script>
 </body>
 
