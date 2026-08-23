@@ -1283,10 +1283,11 @@
                 }, floodItems.length * 450 + 500);
             }
 
-            // "알림 5개" 에서 "하위 38%" 가 뜰 때까지의 간격.
-            // 화면 전환(암전 1s + 페이드인 1s) 뒤 "비교 분석 결과" 라벨만 남은 채로
+            // "알림 5개" 탭 -> 수치가 화면에 다 뜨고 알림이 함께 오기까지.
+            // 화면 전환(페이드아웃 1s + 페이드인 1s) 뒤 "비교 분석 결과" 라벨만 남은 채로
             // 나머지 시간을 기다렸다가 수치가 나타난다.
-            const FLOOD_TO_COMPARE_MS = 10000;
+            const FLOOD_TO_COMPARE_MS = 5000;
+            const COMPARE_VALUE_ANIM_MS = 700; // compareIn 애니메이션 길이
 
             let floodBusy = false;
             screenFlood.addEventListener('click', () => {
@@ -1294,7 +1295,7 @@
                 if (document.getElementById('flood-guide').classList.contains('waiting')) return;
                 floodBusy = true;
                 goTo(screenCompare);
-                setTimeout(startCompare, FLOOD_TO_COMPARE_MS);
+                setTimeout(startCompare, FLOOD_TO_COMPARE_MS - COMPARE_VALUE_ANIM_MS);
             });
 
             // ---- 4번 화면 ----
@@ -1308,6 +1309,22 @@
                 void val.offsetWidth;
                 val.classList.add('show');
                 setTimeout(() => vibrate([250, 120, 250, 120, 250]), 500);
+
+                // 조항 화면과 같은 원칙: 수치가 다 뜨는 순간 알림도 함께 간다.
+                // 문구는 화면에서 그대로 읽어오므로 수치를 바꾸면 알림도 따라간다.
+                setTimeout(() => {
+                    const label = document.querySelector('#screen-compare .compare-label');
+                    (notifPermission || ensureNotifPermission()).then(granted => {
+                        if (granted) {
+                            sendNotification(
+                                label ? label.textContent.trim() : '비교 분석 결과',
+                                val.textContent.trim(),
+                                { tag: 'compare' }
+                            );
+                        }
+                    });
+                }, COMPARE_VALUE_ANIM_MS);
+
                 setTimeout(() => {
                     guide.classList.remove('waiting');
                 }, 1800);
