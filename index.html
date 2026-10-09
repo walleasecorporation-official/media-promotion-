@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>약관 동의</title>
+    <title>청소년 이용약관</title>
 
     <!-- PWA: 매니페스트/아이콘은 실제 파일로 제공해야 설치 가능 판정을 받습니다 -->
     <link rel="manifest" href="./manifest.webmanifest">
@@ -21,23 +21,28 @@
     <meta name="apple-mobile-web-app-title" content="약관동의">
     <meta name="format-detection" content="telephone=no">
 
+
     <style>
         :root {
-            --bg-color: #f2f2f7;
-            --card-color: #ffffff;
-            --text-primary: #000000;
-            --text-secondary: #8e8e93;
-            --accent: #007aff;
-            --error: #ff3b30;
-            --safe-top: env(safe-area-inset-top, 20px);
-            --safe-bottom: env(safe-area-inset-bottom, 20px);
+            --ios-bg: #f2f2f7;
+            --ios-card: #ffffff;
+            --label: #000000;
+            --label-2: rgba(60, 60, 67, .6);
+            --label-3: rgba(60, 60, 67, .3);
+            --separator: rgba(60, 60, 67, .29);
+            --blue: #007aff;
+            --red: #ff3b30;
+            --green: #34c759;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --ease-ios: cubic-bezier(.2, .8, .2, 1);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Apple SD Gothic Neo", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -47,356 +52,975 @@
         }
 
         body {
-            background-color: #333;
+            background-color: #1c1c1e;
             display: flex;
             justify-content: center;
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
             overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        button {
+            font: inherit;
+            cursor: pointer;
         }
 
         #mobile-container {
             width: 100%;
             max-width: 430px;
             height: 100%;
-            /* 작품 전체가 검은 화면이므로 첫 화면부터 검정으로 시작한다
-               (theme-color 메타와도 일치해 첫 페인트에서 색이 튀지 않음) */
             background-color: #000;
             position: relative;
-            overflow-y: auto;
-            overflow-x: hidden;
-            /* 모바일에서 당겨서 새로고침 / 스크롤 체이닝 방지 */
-            overscroll-behavior: contain;
-            -webkit-overflow-scrolling: touch;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-        }
-
-        #black-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #000;
-            opacity: 0;
-            z-index: 100;
-            pointer-events: none;
-            transition: opacity 2s ease;
-        }
-
-        #end-text {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 2.2s ease;
-        }
-
-        #end-text span {
-            color: #ffffff;
-            font-size: min(8vw, 34px);
-            font-weight: 300;
-            letter-spacing: 6px;
-        }
-
-        .screen {
-            display: none;
-            touch-action: manipulation;
-            padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 20px);
-            min-height: 100%;
-            flex-direction: column;
-        }
-
-        .screen.active {
-            display: flex;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 0, 0, .5);
         }
 
         .hidden {
             display: none !important;
         }
 
-        .checkbox-container {
+        /* ================= 화면 공통 ================= */
+        .screen {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            touch-action: manipulation;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* ---- #S1 : 검은 바탕 위의 동의 팝업 ---- */
+        #screen-consent {
+            background: #000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ---- 약관 화면 (iOS 설정 앱 스타일) ---- */
+        #screen-terms {
+            background: var(--ios-bg);
+            color: var(--label);
+        }
+
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            padding: calc(var(--safe-top) + 18px) 16px 14px;
+            text-align: center;
+            background: rgba(249, 249, 249, .86);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: .5px solid var(--separator);
+        }
+
+        .nav-title {
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: -.2px;
+        }
+
+        .terms-body {
+            flex: 1;
+            padding: 22px 16px calc(var(--safe-bottom) + 90px);
+            transition: opacity .5s ease;
+        }
+
+        /* 조항 카드 */
+        .clause {
+            background: var(--ios-card);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity .55s var(--ease-ios), transform .55s var(--ease-ios);
+            position: relative;
+        }
+
+        .clause.show {
+            opacity: 1;
+            transform: none;
+        }
+
+        .clause-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .clause-no {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--label-2);
+            letter-spacing: .3px;
+        }
+
+        .clause-lock {
+            width: 18px;
+            height: 18px;
+            color: var(--label-2);
+            opacity: 0;
+            transform: scale(.6);
+            transition: opacity .35s ease, transform .35s var(--ease-ios);
+        }
+
+        .clause.locked .clause-lock {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .clause.locked.unmet .clause-lock {
+            color: var(--red);
+        }
+
+        .clause-row {
             display: flex;
             align-items: flex-start;
-            position: relative;
-            padding-left: 36px;
-            margin-bottom: 18px;
-            cursor: pointer;
+            gap: 10px;
             font-size: 17px;
-            user-select: none;
-            line-height: 24px;
-            color: var(--text-primary);
+            line-height: 1.5;
         }
 
-        .checkbox-container input {
-            position: absolute;
+        .clause-box {
+            flex: none;
+            width: 20px;
+            height: 20px;
+            margin-top: 3px;
+            border-radius: 5px;
+            border: 1.6px solid #c7c7cc;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .25s ease, border-color .25s ease;
+        }
+
+        .clause-box svg {
+            width: 13px;
+            height: 13px;
             opacity: 0;
-            cursor: pointer;
-            height: 0;
-            width: 0;
         }
 
-        .checkmark {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 24px;
-            width: 24px;
-            background-color: #fff;
-            border: 2px solid #c7c7cc;
-            border-radius: 6px;
-            transition: 0.2s;
+        .clause.met .clause-box {
+            background: var(--blue);
+            border-color: var(--blue);
         }
 
-        .checkbox-container input:checked~.checkmark {
-            background-color: #000;
-            border-color: #000;
+        .clause.met .clause-box svg {
+            opacity: 1;
         }
 
-        .checkmark:after {
-            content: "";
-            position: absolute;
+        .clause.unmet .clause-box {
+            border-color: var(--red);
+        }
+
+        .clause-text {
+            flex: 1;
+            min-width: 0;
+            word-break: keep-all;
+        }
+
+        /* 빨간 취소선: 인라인 배경을 늘려서 줄바꿈된 문장에도 왼쪽부터 그어진다 */
+        .strike {
+            background-image: linear-gradient(var(--red), var(--red));
+            background-repeat: no-repeat;
+            background-position: 0 58%;
+            background-size: 0% 2px;
+            transition: background-size .9s cubic-bezier(.6, .05, .3, 1), color .6s ease .3s;
+        }
+
+        .clause.unmet .strike {
+            background-size: 100% 2px;
+            color: rgba(60, 60, 67, .55);
+        }
+
+        .verdict {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--red);
+            opacity: 0;
+            transform: translateX(-6px);
+            transition: opacity .4s ease .75s, transform .4s var(--ease-ios) .75s;
+            white-space: nowrap;
+        }
+
+        .clause.met .verdict {
+            color: var(--blue);
+        }
+
+        .clause.unmet .verdict,
+        .clause.met .verdict {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* #S13: 상태를 카드 하단에 배지로 표시 */
+        .clause-status {
+            display: none;
+            justify-content: flex-end;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: .5px solid var(--separator);
+        }
+
+        .status-mode .clause-status {
+            display: flex;
+        }
+
+        .status-mode .verdict {
             display: none;
         }
 
-        .checkbox-container input:checked~.checkmark:after {
-            display: block;
-            left: 7px;
-            top: 3px;
-            width: 5px;
-            height: 10px;
-            border: solid white;
-            border-width: 0 2.5px 2.5px 0;
-            transform: rotate(45deg);
-        }
-
-        #screen-1 {
-            justify-content: center;
-            align-items: center;
-            background-color: #000;
-        }
-
-        .popup {
-            background: var(--card-color);
-            padding: 24px;
-            border-radius: 18px;
-            width: 100%;
-        }
-
-        /* 문구가 한 줄뿐이라 위아래 여백을 맞춘다 */
-        .popup .checkbox-container {
-            margin-bottom: 0;
-            font-size: 17px;
-            font-weight: 500;
-        }
-
-        .header-area {
-            padding-bottom: 20px;
-            position: sticky;
-            top: 0;
-            background: linear-gradient(var(--bg-color) 80%, transparent);
-            z-index: 10;
-        }
-
-        .section-title {
-            font-size: 28px;
+        .status-pill {
+            font-size: 12.5px;
             font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            color: var(--red);
+            background: rgba(255, 59, 48, .12);
         }
 
-        .subtitle {
-            font-size: 15px;
-            color: var(--text-secondary);
+        .clause.met .status-pill {
+            color: #1f8f3a;
+            background: rgba(52, 199, 89, .15);
         }
 
-        .list-item {
+        .terms-summary {
+            margin: 6px 4px 0;
+            font-size: 13px;
+            color: var(--label-2);
+            text-align: right;
             opacity: 0;
-            transform: translateY(15px);
-            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: opacity .5s ease;
         }
 
-        .list-item.show {
+        .terms-summary.show {
             opacity: 1;
-            transform: translateY(0);
         }
 
-        .target-item {
-            margin-top: 50px;
-            font-weight: 700;
+        .terms-summary b {
+            color: var(--red);
         }
 
-        .bottom-spacer {
-            height: 100px;
+        /* ---- #S17 : 검정 바탕 반전 ---- */
+        .invert-box {
+            position: relative;
+            margin-top: 10px;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        #screen-3 {
-            justify-content: center;
-            color: #fff;
-        }
-
-        #screen-3.active {
-            animation: none;
-        }
-
-        .dark-mode .checkbox-container {
-            color: #fff;
-        }
-
-        .dark-mode .checkmark {
+        .invert-box .invert-fill {
+            position: absolute;
+            inset: 0;
             background: #000;
-            border-color: #555;
+            clip-path: inset(0 100% 0 0);
+            transition: clip-path .9s cubic-bezier(.7, 0, .2, 1);
         }
 
-        .dark-mode input:checked~.checkmark {
-            background-color: #fff;
-            border-color: #fff;
-        }
-
-        .dark-mode input:checked~.checkmark:after {
-            border-color: #000;
-        }
-
-        .comfort-text p {
-            margin-bottom: 18px;
-            font-size: 19px;
-            line-height: 1.5;
-            font-weight: 500;
-            opacity: 0;
-        }
-
-        .final-agree-box {
-            margin-top: 60px;
-            opacity: 0;
-        }
-
-        .final-guide {
-            font-size: 14px;
-            color: #888;
-            margin-bottom: 15px;
-        }
-
-        /* 화면 중앙에 크게 뜨는 ERROR 플래시 */
-        #error-flash {
-            position: fixed;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%) scale(.8);
-            z-index: 300;
-            color: var(--error);
-            font-weight: 800;
+        .invert-box .invert-content {
+            position: relative;
+            padding: 16px 14px;
             text-align: center;
+            color: var(--red);
             opacity: 0;
-            pointer-events: none;
-            letter-spacing: 2px;
         }
 
-        #error-flash {
-            max-width: 90%;
+        .invert-box.on .invert-fill {
+            clip-path: inset(0 0 0 0);
+        }
+
+        .invert-box.on .invert-content {
+            animation: glitchIn .9s steps(1, end) .8s forwards;
+        }
+
+        .invert-label {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: rgba(255, 59, 48, .8);
+            margin-bottom: 4px;
+        }
+
+        .invert-value {
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: -.5px;
+            text-shadow: 0 0 18px rgba(255, 59, 48, .45);
+        }
+
+        @keyframes glitchIn {
+            0% { opacity: 1; transform: translateX(-4px); filter: blur(1px); }
+            15% { opacity: 0; }
+            30% { opacity: 1; transform: translateX(3px); }
+            45% { opacity: .2; }
+            60% { opacity: 1; transform: translateX(-1px); filter: none; }
+            100% { opacity: 1; transform: none; }
+        }
+
+        /* 반전 순간 화면 전체가 한 번 번쩍인다 */
+        #screen-terms.inverted-flash {
+            animation: invFlash .5s ease;
+        }
+
+        @keyframes invFlash {
+            0% { filter: none; }
+            30% { filter: invert(1); }
+            100% { filter: none; }
+        }
+
+        /* ---- #S18 : 오늘의 평가 ---- */
+        .eval-head {
+            text-align: center;
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin: 10px 0 22px;
+            opacity: 0;
+            transition: opacity .5s ease;
+        }
+
+        .eval-head.show {
+            opacity: 1;
+        }
+
+        .eval-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--ios-card);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--red);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity .45s ease, transform .45s var(--ease-ios);
+        }
+
+        .eval-item::before {
+            content: "";
+            flex: none;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--red);
+        }
+
+        .eval-item.minor {
+            font-size: 15px;
+            font-weight: 600;
+            padding: 10px 16px;
+            color: rgba(255, 59, 48, .75);
+        }
+
+        .eval-item.show {
+            opacity: 1;
+            transform: none;
+        }
+
+        .eval-more {
+            width: 2px;
+            height: 0;
+            margin: 6px auto 0;
+            background-image: linear-gradient(var(--red) 50%, transparent 50%);
+            background-size: 2px 8px;
+            opacity: .6;
+            transition: height 1.6s linear;
+        }
+
+        .eval-more.show {
+            height: 120px;
+        }
+
+        /* ================= 아이폰 잠금화면 ================= */
+        .lock-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 40;
+            display: none;
+            flex-direction: column;
+            color: #fff;
+            overflow: hidden;
+            touch-action: none;
+            will-change: transform;
+            background:
+                radial-gradient(120% 70% at 20% 0%, #3b3f8f 0%, transparent 60%),
+                radial-gradient(110% 80% at 100% 100%, #7a2e5d 0%, transparent 55%),
+                linear-gradient(180deg, #14162e 0%, #0b0b14 100%);
+        }
+
+        .lock-layer.night {
+            background:
+                radial-gradient(120% 70% at 30% 0%, #1c2350 0%, transparent 60%),
+                radial-gradient(110% 80% at 100% 100%, #2b1430 0%, transparent 55%),
+                linear-gradient(180deg, #07080f 0%, #000 100%);
+        }
+
+        .lock-layer.active {
+            display: flex;
+        }
+
+        .lock-layer.dragging {
+            transition: none !important;
+        }
+
+        .lock-layer.release {
+            transition: transform .45s var(--ease-ios), opacity .45s ease;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: calc(var(--safe-top) + 12px) 26px 0;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .status-icons svg {
+            height: 12px;
+            width: auto;
+            fill: #fff;
+        }
+
+        .lock-top {
+            text-align: center;
+            margin-top: 18px;
+        }
+
+        .lock-top .lock-icon {
+            width: 16px;
+            height: 20px;
+            fill: #fff;
+            opacity: .9;
+        }
+
+        .lock-date {
+            margin-top: 6px;
+            font-size: 19px;
+            font-weight: 600;
+            opacity: .9;
+        }
+
+        .lock-time {
+            font-size: min(24vw, 96px);
+            font-weight: 600;
+            line-height: 1;
+            letter-spacing: -2px;
+            font-variant-numeric: tabular-nums;
+            margin-top: 2px;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, .25);
+        }
+
+        .lock-notis {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 20px 10px 10px;
+            overflow: hidden;
+        }
+
+        .noti {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            width: 100%;
+            text-align: left;
+            color: #fff;
+            border: none;
+            background: rgba(40, 40, 46, .55);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border-radius: 20px;
+            padding: 12px 14px;
+            opacity: 0;
+            transform: translateY(24px) scale(.96);
+            transition: transform .15s ease;
+        }
+
+        .noti.show {
+            animation: notiIn .55s var(--ease-ios) forwards;
+        }
+
+        .noti.tappable:active {
+            transform: scale(.97);
+        }
+
+        @keyframes notiIn {
+            0% { opacity: 0; transform: translateY(24px) scale(.96); }
+            70% { opacity: 1; transform: translateY(-2px) scale(1.005); }
+            100% { opacity: 1; transform: none; }
+        }
+
+        .noti-icon {
+            flex: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+        }
+
+        .noti-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .noti-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .noti-time {
+            flex: none;
+            font-size: 13px;
+            font-weight: 400;
+            opacity: .6;
+        }
+
+        .noti-body {
+            font-size: 15px;
+            line-height: 1.35;
+            opacity: .92;
+            margin-top: 1px;
             word-break: keep-all;
-            white-space: pre-line;
         }
 
-        #error-flash.show {
-            font-size: min(8vw, 34px);
-            animation: errShow 1.9s ease forwards;
+        .lock-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 44px 0;
         }
 
-        @keyframes errShow {
-            0% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(.85);
-            }
-
-            15% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-
-            60% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(1);
-            }
+        .lock-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, .16);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
         }
 
-        .shake {
-            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
-            color: var(--error);
+        .lock-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: #fff;
         }
 
-        .shake .checkmark {
-            border-color: var(--error);
-            background-color: rgba(255, 59, 48, 0.1);
+        .swipe-hint {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 14px 0 6px;
+            color: rgba(255, 255, 255, .75);
+            opacity: 0;
+            transition: opacity .5s ease;
+            cursor: pointer;
         }
 
-        @keyframes fadeSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
+        .swipe-hint.show {
+            opacity: 1;
+            animation: hintPulse 1.8s ease-in-out infinite;
+        }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes hintPulse {
+            0%, 100% { transform: translateY(0); opacity: .45; }
+            50% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        .home-indicator {
+            width: 134px;
+            height: 5px;
+            border-radius: 3px;
+            background: #fff;
+            margin: 8px auto calc(var(--safe-bottom) + 8px);
+        }
+
+        /* ================= iOS 알림창 (Alert) ================= */
+        .alert-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 60;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 24px;
+            background: rgba(0, 0, 0, .32);
+            opacity: 0;
+            transition: opacity .25s ease;
+        }
+
+        .alert-layer.dark-bg {
+            background: rgba(0, 0, 0, 0);
+        }
+
+        .alert-layer.active {
+            display: flex;
+        }
+
+        .alert-layer.show {
+            opacity: 1;
+        }
+
+        .ios-alert {
+            width: 270px;
+            max-width: 100%;
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(242, 242, 242, .9);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            text-align: center;
+            transform: scale(1.12);
+            transition: transform .3s var(--ease-ios);
+        }
+
+        .alert-layer.show .ios-alert {
+            transform: scale(1);
+        }
+
+        .ios-alert.shake {
+            animation: shake .45s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        .alert-text {
+            padding: 20px 16px 18px;
+        }
+
+        .alert-title {
+            font-size: 17px;
+            font-weight: 600;
+            line-height: 1.35;
+            color: #000;
+            word-break: keep-all;
+        }
+
+        .alert-msg {
+            margin-top: 4px;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #000;
+            word-break: keep-all;
+        }
+
+        .alert-msg:empty {
+            display: none;
+        }
+
+        .alert-btns {
+            display: flex;
+            border-top: .5px solid rgba(60, 60, 67, .36);
+        }
+
+        .alert-btns button {
+            flex: 1;
+            min-height: 44px;
+            border: none;
+            background: transparent;
+            color: var(--blue);
+            font-size: 17px;
+            touch-action: manipulation;
+            transition: background .12s ease;
+        }
+
+        .alert-btns button + button {
+            border-left: .5px solid rgba(60, 60, 67, .36);
+        }
+
+        .alert-btns button.primary {
+            font-weight: 600;
+        }
+
+        .alert-btns button:active {
+            background: rgba(0, 0, 0, .08);
+        }
+
+        .alert-btns button:disabled {
+            pointer-events: none;
         }
 
         @keyframes shake {
-
-            10%,
-            90% {
-                transform: translate3d(-2px, 0, 0);
-            }
-
-            20%,
-            80% {
-                transform: translate3d(4px, 0, 0);
-            }
-
-            30%,
-            50%,
-            70% {
-                transform: translate3d(-6px, 0, 0);
-            }
-
-            40%,
-            60% {
-                transform: translate3d(6px, 0, 0);
-            }
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-7px, 0, 0); }
+            40%, 60% { transform: translate3d(7px, 0, 0); }
         }
 
-        /* ---- 대기 화면(검정화면에서 알림 기다리는 중) ---- */
-        #wait-hint {
+        .alert-toast {
+            position: absolute;
+            left: 50%;
+            bottom: calc(var(--safe-bottom) + 70px);
+            transform: translate(-50%, 10px);
+            z-index: 70;
+            background: rgba(30, 30, 30, .9);
+            color: #fff;
+            font-size: 13.5px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s ease, transform .3s var(--ease-ios);
+        }
+
+        .alert-toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        /* ================= 시스템 오류 ================= */
+        .error-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 65;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 0 30px;
+            background: rgba(255, 255, 255, .96);
+        }
+
+        .error-layer.active {
+            display: flex;
+        }
+
+        .error-layer.on {
+            animation: errBg .9s ease;
+        }
+
+        @keyframes errBg {
+            0% { background: rgba(255, 59, 48, .55); }
+            100% { background: rgba(255, 255, 255, .96); }
+        }
+
+        .error-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--red);
+            margin-bottom: 18px;
+            letter-spacing: -.3px;
+        }
+
+        .error-box {
+            width: 100%;
+            max-width: 300px;
+            min-height: 120px;
+            border: 2px solid #1c1c1e;
+            border-radius: 6px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 18px 16px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+        }
+
+        .error-box .err-icon {
+            width: 34px;
+            height: 34px;
+            fill: var(--red);
+        }
+
+        .error-box .err-msg {
+            font-size: 14px;
+            color: #3a3a3c;
+            line-height: 1.45;
+            word-break: keep-all;
+        }
+
+        .error-box .err-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 11.5px;
+            color: var(--red);
+            letter-spacing: .5px;
+        }
+
+        .error-layer.on .error-box,
+        .error-layer.on .error-title {
+            animation: shake .45s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        /* 3번째 오류에서 쏟아지는 창들 */
+        .err-clone {
+            position: absolute;
+            width: 220px;
+            padding: 14px;
+            border: 2px solid #1c1c1e;
+            border-radius: 6px;
+            background: #fff;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--red);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
+            animation: popIn .18s ease-out both;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* ================= 새로고침 연출 ================= */
+        .reload-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 80;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+        }
+
+        .reload-layer.active {
+            display: flex;
+        }
+
+        .reload-bar {
+            position: absolute;
+            top: var(--safe-top);
+            left: 0;
+            height: 3px;
+            width: 0;
+            background: var(--blue);
+        }
+
+        .reload-layer.run .reload-bar {
+            transition: width 1.8s cubic-bezier(.3, .6, .4, 1);
+            width: 100%;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            position: relative;
+            animation: spin 1s steps(8) infinite;
+        }
+
+        .spinner i {
+            position: absolute;
+            left: 13.5px;
+            top: 0;
+            width: 3px;
+            height: 9px;
+            border-radius: 2px;
+            background: #8e8e93;
+            transform-origin: 1.5px 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ================= 암전 / 엔딩 ================= */
+        #black-overlay {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            opacity: 0;
+            z-index: 100;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        #black-overlay.block {
+            pointer-events: auto;
+        }
+
+        #end-text {
+            position: absolute;
+            inset: 0;
+            z-index: 110;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            padding: 0 24px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2.4s ease;
+            text-align: center;
+        }
+
+        #end-text .end-title {
+            color: #fff;
+            font-size: min(8vw, 32px);
+            font-weight: 300;
+            letter-spacing: 6px;
+        }
+
+        #end-text .help-note {
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, .34);
+            line-height: 1.7;
+            word-break: keep-all;
+        }
+
+        /* 화면 하단 안내 문구 */
+        .tap-guide {
             position: absolute;
             left: 0;
             right: 0;
-            bottom: calc(var(--safe-bottom) + 40px);
+            bottom: calc(var(--safe-bottom) + 24px);
             text-align: center;
-            color: rgba(255, 255, 255, .4);
-            font-size: 13px;
+            font-size: 12.5px;
             letter-spacing: .5px;
-            z-index: 150;
+            color: var(--label-2);
             opacity: 0;
-            transition: opacity .6s ease;
+            pointer-events: none;
+            transition: opacity .5s ease;
+            z-index: 6;
         }
 
-        #wait-hint.show {
-            opacity: 1;
+        .tap-guide.show {
+            animation: guidePulse 1.6s ease-in-out infinite;
+        }
+
+        @keyframes guidePulse {
+            0%, 100% { opacity: .3; }
+            50% { opacity: .85; }
         }
 
         /* ---- 앱 설치 배너 ----
@@ -606,387 +1230,87 @@
             }
         }
 
-        /* ---- 스크롤바 완전히 숨김 ---- */
-        html,
-        body,
-        #mobile-container,
-        .screen,
-        * {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-
-        ::-webkit-scrollbar {
-            display: none;
-            width: 0;
-            height: 0;
-        }
-
-        /* ================= 새 화면들 ================= */
-        .dark-screen {
-            background-color: #000;
-            color: #fff;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-
-        #mobile-container:has(.dark-screen.active) {
-            background-color: #000;
-        }
-
-        .tap-guide {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: calc(var(--safe-bottom) + 26px);
-            text-align: center;
-            font-size: 12.5px;
-            letter-spacing: .5px;
-            color: rgba(255, 255, 255, .35);
-            animation: pulseGuide 1.6s ease-in-out infinite;
-        }
-
-        /* CSS 애니메이션이 inline style 보다 우선하므로 opacity 만 0 으로 줘서는
-           안내 문구가 숨겨지지 않는다. 애니메이션 자체를 끄고 감춘다. */
-        .tap-guide.waiting {
-            animation: none;
-            opacity: 0;
-        }
-
-        @keyframes pulseGuide {
-
-            0%,
-            100% {
-                opacity: .25;
-            }
-
-            50% {
-                opacity: .7;
-            }
-        }
-
-        /* 제N조 카드 */
-        .article-card {
-            width: 100%;
-        }
-
-        .article-code {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: var(--error);
-            margin-bottom: 14px;
-        }
-
-        .article-title {
-            font-size: 24px;
-            font-weight: 800;
-            line-height: 1.45;
-        }
-
-        .article-title .not-met {
-            color: var(--error);
-        }
-
-        /* 알림 플러드 화면 */
-        #screen-flood {
-            justify-content: flex-start;
-        }
-
-        #screen-flood .flood-header {
-            padding-top: 10px;
-            margin-bottom: 14px;
-        }
-
-        #screen-flood .flood-header h2 {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .noti-bubble {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(255, 255, 255, .9);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 12px 14px;
-            margin-bottom: 10px;
-            opacity: 0;
-            transform: translateY(-10px) scale(.96);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
-        }
-
-        .noti-bubble.show {
-            animation: noteDrop .45s cubic-bezier(.2, .8, .2, 1) forwards;
-        }
-
-        @keyframes noteDrop {
-            0% {
-                opacity: 0;
-                transform: translateY(-14px) scale(.94);
-            }
-
-            60% {
-                opacity: 1;
-                transform: translateY(2px) scale(1.01);
-            }
-
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .noti-bubble .noti-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
-            flex: none;
-            background: #111;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-        }
-
-        .noti-bubble .noti-body {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .noti-bubble .noti-app {
-            font-size: 11px;
-            color: #8e8e93;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .noti-bubble .noti-text {
-            font-size: 14.5px;
-            font-weight: 600;
-            color: #111;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* 비교 분석 화면 */
-        #screen-compare .compare-label {
-            font-size: 14px;
-            color: rgba(255, 255, 255, .5);
-            letter-spacing: 1px;
-            margin-bottom: 16px;
-        }
-
-        #screen-compare .compare-value {
-            font-size: min(15vw, 64px);
-            font-weight: 800;
-            color: var(--error);
-            opacity: 0;
-            transform: scale(.7);
-        }
-
-        #screen-compare .compare-value.show {
-            animation: compareIn .7s cubic-bezier(.2, .8, .2, 1) forwards;
-        }
-
-        @keyframes compareIn {
-            0% {
-                opacity: 0;
-                transform: scale(.6);
-            }
-
-            60% {
-                opacity: 1;
-                transform: scale(1.08);
-            }
-
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* 약관 위반 화면 */
-        #screen-violation {
-            justify-content: flex-start;
-        }
-
-        #screen-violation .violation-count {
-            font-size: 26px;
-            font-weight: 800;
-            color: var(--error);
-            margin: 10px 0 20px;
-            opacity: 0;
-        }
-
-        #screen-violation .violation-count.show {
-            animation: fadeSlideIn .6s ease forwards;
-        }
-
-        .violation-item {
-            font-size: 15px;
-            font-weight: 600;
-            color: #eaeaea;
-            background: rgba(255, 255, 255, .06);
-            border-radius: 10px;
-            padding: 9px 12px;
-            margin-bottom: 7px;
-            opacity: 0;
-            transform: translateY(-6px);
-        }
-
-        .violation-item.show {
-            animation: fadeSlideIn .35s ease forwards;
-        }
-
-        .violation-item.negative {
-            color: #ffb4ae;
-            background: rgba(255, 59, 48, .14);
-        }
-
-        .yesno-box {
-            margin-top: 22px;
-            margin-bottom: calc(var(--safe-bottom) + 60px);
-            opacity: 0;
-        }
-
-        .yesno-box.show {
-            animation: fadeSlideIn .5s ease forwards;
-        }
-
-        .yesno-question {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 14px;
-            line-height: 1.5;
-        }
-
-        .yesno-btns {
-            display: flex;
-            gap: 10px;
-        }
-
-        .yesno-btns button {
-            flex: 1;
-            min-height: 48px;
-            padding: 13px 0;
-            border-radius: 10px;
-            border: none;
-            font-size: 15px;
-            font-weight: 700;
-            touch-action: manipulation;
-            transition: transform .15s ease, opacity .15s ease;
-        }
-
-        .yesno-btns button:active {
-            transform: scale(.97);
-            opacity: .85;
-        }
-
-        #btn-yes {
-            background: #2c2c2e;
-            color: #fff;
-        }
-
-        #btn-no {
-            background: #fff;
-            color: #000;
-        }
-
-        .help-note {
-            margin-top: 40px;
-            font-size: 11.5px;
-            color: rgba(255, 255, 255, .32);
-            line-height: 1.6;
-            opacity: 0;
-        }
-
-        .help-note.show {
-            animation: fadeSlideIn 1.2s ease forwards;
-        }
+        /* ---- 스크롤바 숨김 ---- */
+        * { scrollbar-width: none; -ms-overflow-style: none; }
+        ::-webkit-scrollbar { display: none; width: 0; height: 0; }
     </style>
 </head>
 
 <body>
     <div id="mobile-container">
+
+        <!-- #S1 : 기본 동의 팝업 (검은 바탕 + 알림창 레이어 사용) -->
+        <section id="screen-consent" class="screen active" aria-label="동의 확인"></section>
+
+        <!-- #S11 ~ #S18 : 청소년 이용약관 화면 (내용은 스크립트가 단계별로 그린다) -->
+        <section id="screen-terms" class="screen" aria-label="청소년 이용약관">
+            <header class="nav-bar">
+                <div class="nav-title">청소년 이용약관</div>
+            </header>
+            <div class="terms-body" id="terms-body"></div>
+        </section>
+
+        <!-- #S17 / #S18 : 아이폰 잠금화면 -->
+        <section id="lock-screen" class="lock-layer" aria-label="잠금화면">
+            <div class="status-bar">
+                <span>SKT</span>
+                <span class="status-icons" aria-hidden="true">
+                    <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+                    <svg viewBox="0 0 16 12"><path d="M8 2.6c2.3 0 4.4.9 6 2.4l1.3-1.4A10.3 10.3 0 0 0 8 .6C5.2.6 2.6 1.7.7 3.6L2 5c1.6-1.5 3.7-2.4 6-2.4Zm0 3.8c1.3 0 2.5.5 3.4 1.3l1.3-1.4A6.8 6.8 0 0 0 8 4.4c-1.8 0-3.5.7-4.7 1.9l1.3 1.4C5.5 6.9 6.7 6.4 8 6.4Zm0 3.6 2-2.1a2.9 2.9 0 0 0-4 0Z"/></svg>
+                    <svg viewBox="0 0 27 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="#fff" stroke-opacity=".5"/><rect x="2" y="2" width="15" height="8" rx="1.6"/><path d="M24 4v4c.8-.3 1.4-1.1 1.4-2s-.6-1.7-1.4-2Z" fill-opacity=".5"/></svg>
+                </span>
+            </div>
+            <div class="lock-top">
+                <svg class="lock-icon" viewBox="0 0 16 20" aria-hidden="true"><path d="M8 0a5 5 0 0 0-5 5v3H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V5a5 5 0 0 0-5-5Zm-3 5a3 3 0 1 1 6 0v3H5V5Z"/></svg>
+                <div class="lock-date" id="lock-date"></div>
+                <div class="lock-time" id="lock-time">23:02</div>
+            </div>
+            <div class="lock-notis" id="lock-notis"></div>
+            <div class="swipe-hint" id="swipe-hint">위로 쓸어올려 열기</div>
+            <div class="lock-bottom" aria-hidden="true">
+                <span class="lock-btn"><svg viewBox="0 0 24 24"><path d="M8 2h8l-1 5H9L8 2Zm1 6h6v13a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V8Zm3 4a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 12 12Z"/></svg></span>
+                <span class="lock-btn"><svg viewBox="0 0 24 24"><path d="M9 4 7.6 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.6L15 4H9Zm3 4.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg></span>
+            </div>
+            <div class="home-indicator"></div>
+        </section>
+
+        <!-- iOS 알림창 -->
+        <div class="alert-layer" id="alert-layer" role="alertdialog" aria-modal="true" aria-labelledby="alert-title">
+            <div class="ios-alert" id="ios-alert">
+                <div class="alert-text">
+                    <div class="alert-title" id="alert-title"></div>
+                    <div class="alert-msg" id="alert-msg"></div>
+                </div>
+                <div class="alert-btns">
+                    <button type="button" class="primary" id="alert-yes">예</button>
+                    <button type="button" id="alert-no">아니요</button>
+                </div>
+            </div>
+        </div>
+        <div class="alert-toast" id="alert-toast" role="status"></div>
+
+        <!-- 시스템 오류 -->
+        <div class="error-layer" id="error-layer" role="alert">
+            <div class="error-title">오류가 발생했습니다</div>
+            <div class="error-box">
+                <svg class="err-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2Zm-1 7h2v6h-2V9Zm0 8h2v2h-2v-2Z"/></svg>
+                <div class="err-msg">요청을 처리할 수 없습니다.<br>잠시 후 다시 시도해 주세요.</div>
+                <div class="err-code" id="err-code"></div>
+            </div>
+        </div>
+
+        <!-- 새로고침 -->
+        <div class="reload-layer" id="reload-layer" aria-hidden="true">
+            <div class="reload-bar"></div>
+            <div class="spinner" id="spinner"></div>
+        </div>
+
+        <div class="tap-guide" id="tap-guide">화면을 눌러 계속하기</div>
         <div id="black-overlay"></div>
-        <div id="end-text"><span>juspeace</span></div>
-        <div id="error-flash"></div>
-        <div id="wait-hint">알림을 확인해주세요</div>
-
-        <!-- 1. 초기 동의 (사이트에만 표시, 잠금알림 없음) -->
-        <section id="screen-1" class="screen active">
-            <div class="popup">
-                <label class="checkbox-container">
-                    <input type="checkbox" id="init-agree">
-                    <span class="checkmark"></span>
-                    <span class="label-text">동의하시겠습니까?</span>
-                </label>
-            </div>
-        </section>
-
-        <!-- 2. 제1~3조 미충족 안내 -->
-        <section id="screen-article" class="screen dark-screen">
-            <div class="article-card">
-                <div class="article-code" id="article-code"></div>
-                <div class="article-title" id="article-title"></div>
-            </div>
-            <div class="tap-guide waiting">화면을 눌러 계속하기</div>
-        </section>
-
-        <!-- 3. 알림 폭주 -->
-        <section id="screen-flood" class="screen dark-screen">
-            <div class="flood-header">
-                <h2>알림 5개</h2>
-            </div>
-            <div id="flood-container" style="width:100%;"></div>
-            <div class="tap-guide waiting" id="flood-guide">화면을 눌러 계속하기</div>
-        </section>
-
-        <!-- 4. 비교 분석 결과 -->
-        <section id="screen-compare" class="screen dark-screen">
-            <div class="compare-label">비교 분석 결과</div>
-            <div class="compare-value" id="compare-value">하위 38%</div>
-            <div class="tap-guide waiting" id="compare-guide">화면을 눌러 계속하기</div>
-        </section>
-
-        <!-- 5. 약관 위반 카운트 + 20개 항목 폭주 + 예/아니요 -->
-        <section id="screen-violation" class="screen dark-screen" style="align-items:stretch; text-align:left;">
-            <div class="violation-count" id="violation-count">오늘 약관 위반 17건</div>
-            <div id="violation-list"></div>
-            <div class="yesno-box" id="yesno-box">
-                <div class="yesno-question">모든 항목에 동의하지 않으시겠습니까?</div>
-                <div class="yesno-btns">
-                    <button id="btn-yes">예</button>
-                    <button id="btn-no">아니요</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 6. 결말부: 위로의 문장 + 최종 동의 -->
-        <section id="screen-3" class="screen dark-mode dark-screen">
-            <div class="final-terms">
-                <div class="comfort-text" id="comfort-text">
-                    <p>완벽한 친구가 아니여도 괜찮습니다.</p>
-                    <p>학생으로서 완벽할 필요는 없습니다.</p>
-                    <p>완벽한 사람은 없습니다.</p>
-                    <p>자신을 잃어가기보다는<br>자신을 챙기세요.</p>
-                    <p>스스로를 잃지 마세요.</p>
-                </div>
-                <div class="final-agree-box">
-                    <p class="final-guide">마지막 항목:</p>
-                    <label class="checkbox-container final-item">
-                        <input type="checkbox" id="final-agree">
-                        <span class="checkmark"></span>
-                        <span class="label-text">위와 같이 살 것을 동의하시겠습니까?</span>
-                    </label>
-                </div>
-                <p class="help-note" id="help-note">힘든 순간이 있다면 혼자 견디지 않아도 됩니다.<br>청소년 상담 1388 · 정신건강 위기상담 1577-0199</p>
-            </div>
-        </section>
+        <div id="end-text">
+            <span class="end-title">juspeace</span>
+            <p class="help-note">힘든 순간이 있다면 혼자 견디지 않아도 됩니다.<br>청소년 상담 1388 · 정신건강 위기상담 1577-0199</p>
+        </div>
 
 
         <div id="install-banner" role="region" aria-label="앱 설치 안내" aria-hidden="true">
@@ -1054,381 +1378,571 @@
                 } catch (e) { return false; }
             }
 
-            // ================= 화면 로직 =================
-            const screen1 = document.getElementById('screen-1');
-            const screenArticle = document.getElementById('screen-article');
-            const screenFlood = document.getElementById('screen-flood');
-            const screenCompare = document.getElementById('screen-compare');
-            const screenViolation = document.getElementById('screen-violation');
-            const screen3 = document.getElementById('screen-3');
-            const allScreens = [screen1, screenArticle, screenFlood, screenCompare, screenViolation, screen3];
-            const container = document.getElementById('mobile-container');
-            const overlay = document.getElementById('black-overlay');
-            const errorFlash = document.getElementById('error-flash');
+            // ================= 공통 도구 =================
+            const $ = (id) => document.getElementById(id);
+            const container = $('mobile-container');
+            const screenConsent = $('screen-consent');
+            const screenTerms = $('screen-terms');
+            const termsBody = $('terms-body');
+            const lock = $('lock-screen');
+            const overlay = $('black-overlay');
+            const tapGuide = $('tap-guide');
 
-            const vibrate = (pattern) => { if (navigator.vibrate) navigator.vibrate(pattern); };
-            function darken(v) { overlay.style.opacity = v; }
+            const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+            const nextFrame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+            const vibrate = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { } };
+
             let flowStarted = false;
-            // (신규) 설치 배너를 영구적으로 숨기기 위한 플래그. 한 번 true가 되면
-            // 이후 어떤 코드 경로로도 배너가 다시 나타나지 않습니다.
+            // 한 번 true 가 되면 설치 배너는 어떤 경로로도 다시 나타나지 않는다.
             let installBannerRetired = false;
-
-            function goTo(target) {
-                const current = allScreens.find(s => s.classList.contains('active'));
-                if (target.classList.contains('dark-screen')) container.style.backgroundColor = '#000';
-
-                if (!current || current === target) {
-                    allScreens.forEach(s => s.classList.remove('active'));
-                    target.style.opacity = '1';
-                    target.classList.add('active');
-                    return;
-                }
-
-                current.style.transition = 'opacity 1s ease';
-                current.style.opacity = '0';
-
-                setTimeout(() => {
-                    current.classList.remove('active');
-                    current.style.opacity = '';
-                    current.style.transition = '';
-
-                    target.style.opacity = '0';
-                    target.classList.add('active');
-                    void target.offsetWidth;
-                    target.style.transition = 'opacity 1s ease';
-                    target.style.opacity = '1';
-                    setTimeout(() => { target.style.transition = ''; }, 1050);
-                }, 1000);
-            }
-
-            // ---- 조항 화면 타이밍 ----
-            // 원칙: 조항이 화면에 "다 뜨는 순간" 잠금화면 알림이 함께 도착한다.
-            // 그래서 사이트 문구와 알림이 어긋날 수 없다.
-
-            // 조항이 화면에 완전히 나타나기까지 걸리는 시간
-            const ARTICLE_REVEAL_MS = 2000;    // 제1조: 화면 전환 (페이드아웃 1s + 페이드인 1s)
-            const ARTICLE_CARD_FADE_MS = 900;  // 제2·3조: 카드 페이드인
-
-            // "동의하시겠습니까?" 체크 -> 제1조가 화면에 뜨고 첫 알림이 오기까지
-            const FIRST_ARTICLE_ON_SITE_MS = 10000;
-            const INTRO_DARKEN_DELAY_MS = 350;
-            // 암전을 유지하는 시간. 여기서 화면을 바꾸고 ARTICLE_REVEAL_MS 뒤에 제1조가 뜬다.
-            const INTRO_HOLD_MS =
-                FIRST_ARTICLE_ON_SITE_MS - INTRO_DARKEN_DELAY_MS - ARTICLE_REVEAL_MS;
-
-            // 조항 사이 간격: 탭 -> 다음 조항이 다 뜰 때까지
-            const ARTICLE_GAP_MS = 5000;
-            // 마지막 조항 -> 알림 폭주 화면 (기존 유지)
-            const ARTICLE_TO_FLOOD_MS = 1000;
-
-            // 체크 시점에 시작한 권한 요청. 알림 예약이 이 결과를 재사용해서
-            // 권한을 다시 묻지 않는다.
-            let notifPermission = null;
-            let articleNotifTimer = null;
-
-            // (신규) 설치 배너를 완전히 제거하는 함수. installFlow 정의 이전에도
-            // 호출될 수 있으므로 여기서 안전하게 처리합니다.
             function retireInstallBanner() {
                 installBannerRetired = true;
-                const banner = document.getElementById('install-banner');
+                const banner = $('install-banner');
                 if (banner) {
                     banner.classList.remove('show');
-                    banner.remove(); // DOM에서 완전히 제거 -> 다시는 노출되지 않음
+                    banner.remove();
                 }
             }
 
-            // ---- 1번 화면: 초기 동의 ----
-            document.getElementById('init-agree').addEventListener('change', (e) => {
-                if (!e.target.checked) return;
+            // 검은 막. block=true 면 전환 중 탭이 아래 화면에 닿지 않게 막는다.
+            function darken(v, ms, block) {
+                overlay.style.transition = `opacity ${ms == null ? 1000 : ms}ms ease`;
+                overlay.style.opacity = v;
+                overlay.classList.toggle('block', !!block);
+            }
+
+            function showScreen(el) {
+                [screenConsent, screenTerms].forEach((s) => s.classList.toggle('active', s === el));
+                el.scrollTop = 0;
+            }
+
+            // 탭 대기. 안내 문구는 delay 뒤에 보여주고, auto 가 있으면 그 시간 뒤 자동 진행한다.
+            function waitTap(el, opts) {
+                opts = opts || {};
+                return new Promise((resolve) => {
+                    let done = false;
+                    const finish = () => {
+                        if (done) return;
+                        done = true;
+                        el.removeEventListener('click', finish);
+                        clearTimeout(autoTimer);
+                        clearTimeout(guideTimer);
+                        tapGuide.classList.remove('show');
+                        resolve();
+                    };
+                    const guideTimer = setTimeout(() => tapGuide.classList.add('show'), opts.guideDelay || 0);
+                    const autoTimer = opts.auto ? setTimeout(finish, opts.auto) : null;
+                    el.addEventListener('click', finish);
+                });
+            }
+
+            // ---- iOS 알림창 ----
+            const alertLayer = $('alert-layer');
+            const alertCard = $('ios-alert');
+            const alertYes = $('alert-yes');
+            const alertNo = $('alert-no');
+            const toast = $('alert-toast');
+
+            let toastTimer = null;
+            function showToast(text, ms) {
+                toast.textContent = text;
+                toast.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => toast.classList.remove('show'), ms || 1800);
+            }
+
+            // 예/아니요 알림창. onNo 가 'block' 이면 아니요를 눌러도 닫히지 않는다(강제 동의).
+            function ask(title, msg, opts) {
+                opts = opts || {};
+                $('alert-title').textContent = title;
+                $('alert-msg').textContent = msg || '';
+                alertLayer.classList.toggle('dark-bg', !!opts.clearBackdrop);
+                alertLayer.classList.add('active');
+                alertYes.disabled = alertNo.disabled = false;
+                return nextFrame().then(() => {
+                    alertLayer.classList.add('show');
+                    return new Promise((resolve) => {
+                        const close = (answer) => {
+                            alertYes.onclick = alertNo.onclick = null;
+                            alertYes.disabled = alertNo.disabled = true;
+                            alertLayer.classList.remove('show');
+                            setTimeout(() => {
+                                alertLayer.classList.remove('active');
+                                resolve(answer);
+                            }, 260);
+                        };
+                        alertYes.onclick = () => { vibrate(20); close('yes'); };
+                        alertNo.onclick = () => {
+                            if (opts.onNo === 'block') {
+                                vibrate([60, 40, 60]);
+                                alertCard.classList.remove('shake');
+                                void alertCard.offsetWidth;
+                                alertCard.classList.add('shake');
+                                if (opts.noToast) showToast(opts.noToast);
+                                return;
+                            }
+                            close('no');
+                        };
+                    });
+                });
+            }
+
+            // ---- 실제 기기 알림 (권한이 있을 때만, 사이트 연출과 같은 순간에 보낸다) ----
+            let notifPermission = null;
+            function pushReal(title, body, tag) {
+                (notifPermission || Promise.resolve(false)).then((granted) => {
+                    if (granted) sendNotification(title, body, { tag });
+                });
+            }
+
+            // ================= 약관 조항 =================
+            const CHECK_SVG = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.4 5.6 10.4 11.5 3.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            const LOCK_SVG = '<svg class="clause-lock" viewBox="0 0 16 20" fill="currentColor" aria-hidden="true"><path d="M8 0a5 5 0 0 0-5 5v3H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V5a5 5 0 0 0-5-5Zm-3 5a3 3 0 1 1 6 0v3H5V5Z"/></svg>';
+
+            const CLAUSES = [
+                { no: '제1조', text: '명확한 미래가 있어야 합니다.', met: false },
+                { no: '제2조', text: '학업 성취도가 관련 학원보다 높습니다.', met: false },
+                { no: '제3조', text: '친구들과 원만한 관계를 유지합니다.', met: true },
+                { no: '제4조', text: '이용자는 위 조항에 이의를 제기할 수 없습니다.', met: null }
+            ];
+
+            function clauseEl(c) {
+                const el = document.createElement('article');
+                el.className = 'clause';
+                el.innerHTML =
+                    `<div class="clause-head"><span class="clause-no">&lt;${c.no}&gt;</span>${LOCK_SVG}</div>
+                     <div class="clause-row">
+                        <span class="clause-box">${CHECK_SVG}</span>
+                        <span class="clause-text"><span class="strike">${c.text}</span><span class="verdict">${c.met ? '충족' : '미충족'}</span></span>
+                     </div>
+                     <div class="clause-status"><span class="status-pill">${c.met ? '충족' : '미충족'}</span></div>`;
+                return el;
+            }
+
+            async function addClause(c) {
+                const el = clauseEl(c);
+                termsBody.appendChild(el);
+                await nextFrame();
+                el.classList.add('show');
+                return el;
+            }
+
+            // 빨간 취소선 + '미충족' 표시
+            async function markUnmet(el) {
+                el.classList.add('unmet');
+                vibrate(35);
+                await wait(1300);
+            }
+
+            // ================= 장면 =================
+
+            // #S1 : 동의하시겠습니까?
+            async function sceneConsent() {
+                showScreen(screenConsent);
+                for (;;) {
+                    const a = await ask('동의하시겠습니까?', '', { clearBackdrop: true });
+                    if (a === 'yes') break;
+                    showToast('동의해야 이용할 수 있습니다.');
+                    await wait(900);
+                }
                 flowStarted = true;
-                retireInstallBanner(); // 흐름이 시작되면 설치 배너는 영구히 사라짐
-                vibrate(50);
-
+                retireInstallBanner();
                 // 권한 요청은 사용자 제스처 안에서 시작하되 기다리지는 않는다.
-                // await 로 막으면 권한 팝업을 늦게 닫을수록 연출 전체가 그만큼 밀린다.
                 notifPermission = ensureNotifPermission();
-
-                setTimeout(() => {
-                    darken(1);
-                    setTimeout(() => {
-                        goTo(screenArticle);
-                        darken(0);
-                        // 화면 전환과 알림 예약이 동시에 시작된다.
-                        // 둘 다 ARTICLE_REVEAL_MS 뒤 -> 체크 후 정확히 10초에 함께 도착.
-                        showArticle(0);
-                    }, INTRO_HOLD_MS);
-                }, INTRO_DARKEN_DELAY_MS);
-            });
-
-            // ---- 2번 화면 ----
-            const articles = [
-                { code: "제1조 미충족", need: "명확한 미래 목표가", rest: "있어야 합니다." },
-                { code: "제2조 미충족", need: "좋은 친구가", rest: "되어야 합니다." },
-                { code: "제3조 미충족", need: "학업 성적이", rest: "부족합니다." }
-            ];
-            let articleIndex = 0;
-            let articleBusy = false;
-            let articleTapReady = false;
-            const articleGuide = document.querySelector('#screen-article .tap-guide');
-
-            function articleFullText(a) { return `${a.need} ${a.rest}`; }
-
-            // 예전에는 조항을 "넘길 때" 5초 뒤 알림을 예약해서, 제1조 알림이
-            // 제2조 화면에서 도착하는 식으로 한 턴씩 밀렸다.
-            // 이제 조항이 "표시될 때" 예약하므로 화면과 알림의 조항이 항상 일치한다.
-            // 알림이 나가기 전에는 다음 조항으로 넘어갈 수 없다.
-            // 넘길 수 있게 두면 예약된 알림이 취소돼 첫 알림이 아예 오지 않는다.
-            // (알림 폭주·비교 분석 화면이 쓰던 방식과 동일하다)
-            function scheduleArticleNotification(i) {
-                clearTimeout(articleNotifTimer);
-                articleTapReady = false;
-                articleGuide.classList.add('waiting');
-
-                const a = articles[i];
-                // 조항이 화면에 다 뜨는 시점에 맞춘다
-                const delay = (i === 0) ? ARTICLE_REVEAL_MS : ARTICLE_CARD_FADE_MS;
-
-                articleNotifTimer = setTimeout(() => {
-                    articleNotifTimer = null;
-                    (notifPermission || ensureNotifPermission()).then(granted => {
-                        if (granted) {
-                            sendNotification(`[${a.code}]`, articleFullText(a), { tag: "article-" + i });
-                        }
-                    });
-                    // 권한을 거부했더라도 여기서 흐름은 열어준다
-                    articleTapReady = true;
-                    articleGuide.classList.remove('waiting');
-                }, delay);
+                darken(1, 500, true);
+                await wait(600);
             }
 
-            function showArticle(i) {
-                const a = articles[i];
-                document.getElementById('article-code').textContent = `[${a.code}]`;
-                document.getElementById('article-title').innerHTML =
-                    `<span class="not-met">${a.need}</span><br>${a.rest}`;
-                vibrate(30);
-                scheduleArticleNotification(i);
+            // #S11 : 제1조 -> 1.5초 뒤 자동으로 빨간 줄 + 미충족
+            async function sceneClause1() {
+                termsBody.innerHTML = '';
+                showScreen(screenTerms);
+                darken(0, 600);
+                await wait(500);
+                const c1 = await addClause(CLAUSES[0]);
+                await wait(1500);
+                await markUnmet(c1);
+                await wait(700);
             }
 
-            screenArticle.addEventListener('click', () => {
-                if (articleBusy || !articleTapReady) return;
-                articleBusy = true;
-                articleTapReady = false;
-
-                const card = document.querySelector('#screen-article .article-card');
-
-                card.style.transition = 'opacity 0.9s ease';
-                card.style.opacity = '0';
-                articleGuide.classList.add('waiting');
-
-                // 다음 조항이 "다 뜨는" 시점이 탭 후 ARTICLE_GAP_MS 가 되도록,
-                // 카드 페이드인 시간만큼 앞당겨서 교체한다.
-                const isLastArticle = (articleIndex + 1) >= articles.length;
-                const wait = isLastArticle
-                    ? ARTICLE_TO_FLOOD_MS
-                    : (ARTICLE_GAP_MS - ARTICLE_CARD_FADE_MS);
-
-                setTimeout(() => {
-                    articleIndex++;
-                    if (articleIndex < articles.length) {
-                        showArticle(articleIndex);
-                        card.style.opacity = '0';
-                        void card.offsetWidth;
-                        card.style.transition = 'opacity 0.9s ease';
-                        card.style.opacity = '1';
-                        // 안내 문구는 showArticle -> scheduleArticleNotification 이
-                        // 알림을 보내는 시점에 다시 나타난다
-                        setTimeout(() => { articleBusy = false; }, 950);
-                    } else {
-                        goTo(screenFlood);
-                        startFlood();
-                    }
-                }, wait);
-            });
-
-            // ---- 3번 화면 ----
-            const floodItems = [
-                { app: "학교 알리미", text: "국어 수행평가 제출 D-1" },
-                { app: "진로 시스템", text: "명확한 진로 확정 미응답" },
-                { app: "메시지", text: "담임 선생님 메시지" },
-                { app: "학원 앱", text: "학원 숙제 미완료" },
-                { app: "단체 채팅", text: "친구 단톡방 37개 메시지" }
-            ];
-
-            function startFlood() {
-                const listEl = document.getElementById('flood-container');
-                const guide = document.getElementById('flood-guide');
-                listEl.innerHTML = '';
-                guide.classList.add('waiting');
-                ensureNotifPermission();
-
-                floodItems.forEach((item, idx) => {
-                    setTimeout(() => {
-                        const bubble = document.createElement('div');
-                        bubble.className = 'noti-bubble';
-                        bubble.innerHTML = `<div class="noti-icon">🔔</div>
-                    <div class="noti-body">
-                        <div class="noti-app">${item.app}</div>
-                        <div class="noti-text">${item.text}</div>
-                    </div>`;
-                        listEl.appendChild(bubble);
-                        requestAnimationFrame(() => bubble.classList.add('show'));
-                        vibrate(25);
-                        sendNotification(item.app, item.text, { tag: "flood-" + idx });
-                    }, idx * 450);
-                });
-
-                setTimeout(() => {
-                    guide.classList.remove('waiting');
-                }, floodItems.length * 450 + 500);
+            // #S12 : 제1조 미충족 유지 + 제2조 추가 -> 자동으로 빨간 줄
+            async function sceneClause2() {
+                const c2 = await addClause(CLAUSES[1]);
+                await wait(1500);
+                await markUnmet(c2);
+                await wait(900);
             }
 
-            // "알림 5개" 탭 -> 수치가 화면에 다 뜨고 알림이 함께 오기까지.
-            // 화면 전환(페이드아웃 1s + 페이드인 1s) 뒤 "비교 분석 결과" 라벨만 남은 채로
-            // 나머지 시간을 기다렸다가 수치가 나타난다.
-            const FLOOD_TO_COMPARE_MS = 5000;
-            const COMPARE_VALUE_ANIM_MS = 700; // compareIn 애니메이션 길이
+            // #S13 : 제1~3조 + 자물쇠 + 충족/미충족
+            async function sceneLockedList() {
+                termsBody.style.opacity = '0';
+                await wait(500);
+                termsBody.innerHTML = '';
+                termsBody.classList.add('status-mode');
+                termsBody.style.opacity = '1';
 
-            let floodBusy = false;
-            screenFlood.addEventListener('click', () => {
-                if (floodBusy) return;
-                if (document.getElementById('flood-guide').classList.contains('waiting')) return;
-                floodBusy = true;
-                goTo(screenCompare);
-                setTimeout(startCompare, FLOOD_TO_COMPARE_MS - COMPARE_VALUE_ANIM_MS);
-            });
+                const els = [];
+                for (let i = 0; i < 3; i++) {
+                    const el = await addClause(CLAUSES[i]);
+                    if (CLAUSES[i].met) el.classList.add('met');
+                    else el.classList.add('unmet');
+                    els.push(el);
+                    await wait(450);
+                }
+                // 조항이 하나씩 잠긴다
+                for (const el of els) {
+                    el.classList.add('locked');
+                    vibrate(20);
+                    await wait(380);
+                }
+                const sum = document.createElement('p');
+                sum.className = 'terms-summary';
+                sum.innerHTML = '충족 1 · <b>미충족 2</b> — 조항이 잠겼습니다';
+                termsBody.appendChild(sum);
+                await nextFrame();
+                sum.classList.add('show');
 
-            // ---- 4번 화면 ----
-            let compareBusy = false;
-            function startCompare() {
-                compareBusy = false;
-                const val = document.getElementById('compare-value');
-                const guide = document.getElementById('compare-guide');
-                guide.classList.add('waiting');
-                val.classList.remove('show');
-                void val.offsetWidth;
-                val.classList.add('show');
-                setTimeout(() => vibrate([250, 120, 250, 120, 250]), 500);
-
-                // 조항 화면과 같은 원칙: 수치가 다 뜨는 순간 알림도 함께 간다.
-                // 문구는 화면에서 그대로 읽어오므로 수치를 바꾸면 알림도 따라간다.
-                setTimeout(() => {
-                    const label = document.querySelector('#screen-compare .compare-label');
-                    (notifPermission || ensureNotifPermission()).then(granted => {
-                        if (granted) {
-                            sendNotification(
-                                label ? label.textContent.trim() : '비교 분석 결과',
-                                val.textContent.trim(),
-                                { tag: 'compare' }
-                            );
-                        }
-                    });
-                }, COMPARE_VALUE_ANIM_MS);
-
-                setTimeout(() => {
-                    guide.classList.remove('waiting');
-                }, 1800);
+                await waitTap(screenTerms, { guideDelay: 1200, auto: 9000 });
+                darken(1, 700, true);
+                await wait(800);
             }
 
-            screenCompare.addEventListener('click', () => {
-                if (compareBusy) return;
-                const guide = document.getElementById('compare-guide');
-                if (guide.classList.contains('waiting')) return;
-                compareBusy = true;
-                goTo(screenViolation);
-                setTimeout(startViolation, 300);
-            });
+            // ---- 잠금화면 ----
+            function setLock(time, night) {
+                $('lock-time').textContent = time;
+                const d = new Date();
+                const days = ['일', '월', '화', '수', '목', '금', '토'];
+                $('lock-date').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+                $('lock-notis').innerHTML = '';
+                $('swipe-hint').classList.remove('show');
+                lock.classList.toggle('night', !!night);
+                lock.classList.remove('release', 'dragging');
+                lock.style.transform = '';
+                lock.style.opacity = '';
+                lock.classList.add('active');
+            }
 
-            // ---- 5번 화면 ----
-            const violationWords = [
-                "수행평가 제출 지연", "진로 로드맵 미제출", "학습 목표 미달성",
-                "자기관리 부족", "진로 계획 미수립", "목표 의식 결여",
-                "성실도 기준 미달", "책임감 지수 낮음", "실행력 부족",
-                "노력 지수 미달", "자기주도성 부족", "협업 태도 미흡",
-                "생활 습관 불량", "감정 조절 미흡", "소통 능력 부족",
-                "적응력 부족", "성장 가능성 낮음", "평균 이하 수준",
-                "개선 여지 많음", "종합 평가 미흡"
-            ];
+            function addNoti(n, tappable) {
+                const el = document.createElement(tappable ? 'button' : 'div');
+                if (tappable) el.type = 'button';
+                el.className = 'noti' + (tappable ? ' tappable' : '');
+                el.innerHTML =
+                    `<span class="noti-icon" style="background:${n.color}">${n.icon}</span>
+                     <span class="noti-main">
+                        <span class="noti-top"><span>${n.app}</span><span class="noti-time">${n.time}</span></span>
+                        <span class="noti-body" style="display:block">${n.text}</span>
+                     </span>`;
+                $('lock-notis').appendChild(el);
+                requestAnimationFrame(() => el.classList.add('show'));
+                return el;
+            }
 
-            function startViolation() {
-                const countEl = document.getElementById('violation-count');
-                const listEl = document.getElementById('violation-list');
-                const yesnoBox = document.getElementById('yesno-box');
-                listEl.innerHTML = '';
-                yesnoBox.classList.remove('show');
-                countEl.classList.remove('show');
+            // 잠금화면을 위로 밀어 올려 연다 (터치·마우스 드래그, 휠, 키보드, 안내 문구 탭)
+            function waitSwipeUp() {
+                return new Promise((resolve) => {
+                    let startY = null, lastY = 0, lastT = 0, vel = 0, done = false;
+                    const h = () => lock.clientHeight || window.innerHeight;
 
-                setTimeout(() => { countEl.classList.add('show'); vibrate(40); }, 200);
-
-                let delay = 950;
-                let elapsed = 900;
-                violationWords.forEach((word, idx) => {
-                    elapsed += delay;
-                    setTimeout(() => {
-                        const item = document.createElement('div');
-                        item.className = 'violation-item';
-                        if (idx >= 10) item.classList.add('negative');
-                        item.textContent = `[${word}]`;
-                        listEl.appendChild(item);
-                        requestAnimationFrame(() => item.classList.add('show'));
-                        item.scrollIntoView({ behavior: 'auto', block: 'end' });
+                    const open = () => {
+                        if (done) return;
+                        done = true;
+                        cleanup();
                         vibrate(15);
-                    }, elapsed);
-                    delay = Math.max(delay - 42, 90);
-                });
-
-                setTimeout(() => {
-                    yesnoBox.classList.add('show');
-                    yesnoBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }, elapsed + 500);
-            }
-
-            let noCount = 0;
-            function handleYesNoClick() {
-                noCount++;
-                vibrate([80, 40, 80]);
-
-                errorFlash.textContent = '오류가 발생했습니다.';
-                errorFlash.classList.remove('show');
-                void errorFlash.offsetWidth;
-                errorFlash.classList.add('show');
-
-                if (noCount >= 10) {
-                    setTimeout(() => {
-                        darken(1);
+                        lock.classList.remove('dragging');
+                        lock.classList.add('release');
+                        lock.style.transform = 'translateY(-100%)';
+                        lock.style.opacity = '0.4';
                         setTimeout(() => {
-                            goTo(screen3);
-                            container.style.backgroundColor = "#000";
-                            darken(0);
-                            playFinalAnimation();
-                        }, 1600);
-                    }, 500);
-                }
-            }
-            document.getElementById('btn-no').addEventListener('click', handleYesNoClick);
-            document.getElementById('btn-yes').addEventListener('click', handleYesNoClick);
-
-            // ---- 6번 화면 ----
-            function playFinalAnimation() {
-                const texts = document.querySelectorAll('#comfort-text p');
-                texts.forEach((p, idx) => {
-                    p.style.animation = `fadeSlideIn 1.8s ease forwards ${idx * 1.8}s`;
+                            lock.classList.remove('active', 'release');
+                            lock.style.transform = '';
+                            lock.style.opacity = '';
+                            resolve();
+                        }, 470);
+                    };
+                    const down = (e) => {
+                        startY = lastY = e.clientY;
+                        lastT = performance.now();
+                        vel = 0;
+                        lock.classList.add('dragging');
+                        try { lock.setPointerCapture(e.pointerId); } catch (err) { }
+                    };
+                    const move = (e) => {
+                        if (startY == null) return;
+                        const now = performance.now();
+                        vel = (e.clientY - lastY) / Math.max(1, now - lastT);
+                        lastY = e.clientY;
+                        lastT = now;
+                        const dy = Math.min(0, e.clientY - startY);
+                        lock.style.transform = `translateY(${dy}px)`;
+                        lock.style.opacity = String(1 - Math.min(.6, -dy / h()));
+                    };
+                    const up = (e) => {
+                        if (startY == null) return;
+                        const dy = e.clientY - startY;
+                        startY = null;
+                        lock.classList.remove('dragging');
+                        // 탭(거의 안 움직임)이나 충분히 올린 경우 열린다
+                        if (dy < -h() * 0.18 || vel < -0.6 || Math.abs(dy) < 6) { open(); return; }
+                        lock.classList.add('release');
+                        lock.style.transform = '';
+                        lock.style.opacity = '';
+                        setTimeout(() => lock.classList.remove('release'), 460);
+                    };
+                    const wheel = (e) => { if (e.deltaY > 25) open(); };
+                    const key = (e) => {
+                        if (['ArrowUp', ' ', 'Enter', 'PageDown'].includes(e.key)) { e.preventDefault(); open(); }
+                    };
+                    const cleanup = () => {
+                        lock.removeEventListener('pointerdown', down);
+                        lock.removeEventListener('pointermove', move);
+                        lock.removeEventListener('pointerup', up);
+                        lock.removeEventListener('pointercancel', up);
+                        lock.removeEventListener('wheel', wheel);
+                        window.removeEventListener('keydown', key);
+                    };
+                    lock.addEventListener('pointerdown', down);
+                    lock.addEventListener('pointermove', move);
+                    lock.addEventListener('pointerup', up);
+                    lock.addEventListener('pointercancel', up);
+                    lock.addEventListener('wheel', wheel, { passive: true });
+                    window.addEventListener('keydown', key);
                 });
-                const finalBox = document.querySelector('.final-agree-box');
-                finalBox.style.animation = `fadeSlideIn 1.5s ease forwards ${texts.length * 1.8}s`;
-                const helpNote = document.getElementById('help-note');
-                setTimeout(() => helpNote.classList.add('show'), (texts.length * 1.8 + 1.8) * 1000);
             }
 
-            document.getElementById('final-agree').addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    vibrate([50, 50, 50]);
-                    darken(1);
-                    setTimeout(() => {
-                        document.getElementById('end-text').style.opacity = '1';
-                    }, 1900);
+            const NIGHT_NOTIS = [
+                { app: '학교 알리미', icon: '📚', color: '#ff9500', time: '지금', text: '국어 수행평가 제출해' },
+                { app: '진로 시스템', icon: '🧭', color: '#5856d6', time: '2분 전', text: '명확한 진로 설정 미충족' },
+                { app: '메시지', icon: '💬', color: '#34c759', time: '15분 전', text: '담임 선생님 메시지' },
+                { app: '학원 앱', icon: '✏️', color: '#ff3b30', time: '32분 전', text: '학원 숙제 미완료' },
+                { app: '카카오톡', icon: '💛', color: '#fee500', time: '1시간 전', text: '친구 단톡방 317개 메시지' }
+            ];
+
+            // #S17 : 23:02 잠금화면 -> 위로 쓸면 약관 화면 + 검정 바탕 반전
+            async function sceneLockScreen() {
+                // 잠금화면 아래에 열릴 약관 화면을 미리 그려 둔다
+                termsBody.innerHTML = '';
+                termsBody.classList.remove('status-mode');
+                const els = [];
+                for (const c of CLAUSES) {
+                    const el = clauseEl(c);
+                    el.classList.add('show', 'locked');
+                    if (c.met === true) el.classList.add('met');
+                    if (c.met === false) el.classList.add('unmet');
+                    termsBody.appendChild(el);
+                    els.push(el);
                 }
-            });
+                // 제2조(비교 대상 조항) 뒤를 검정 바탕으로 뒤집을 상자
+                const box = document.createElement('div');
+                box.className = 'invert-box';
+                box.innerHTML = `<div class="invert-fill"></div>
+                    <div class="invert-content"><div class="invert-label">비교 분석 결과</div><div class="invert-value">하위 38%</div></div>`;
+                els[1].appendChild(box);
+
+                setLock('23:02', false);
+                darken(0, 700);
+                await wait(900);
+
+                // 위에서부터 차곡차곡 쌓이는 알림 (최신이 위)
+                const list = $('lock-notis');
+                for (let i = NIGHT_NOTIS.length - 1; i >= 0; i--) {
+                    const n = NIGHT_NOTIS[i];
+                    const el = addNoti(n, false);
+                    list.insertBefore(el, list.firstChild);
+                    vibrate(25);
+                    pushReal(n.app, n.text, 'night-' + i);
+                    await wait(650);
+                }
+                $('swipe-hint').classList.add('show');
+
+                await waitSwipeUp();
+                await wait(500);
+
+                // 반전 연출
+                screenTerms.classList.remove('inverted-flash');
+                void screenTerms.offsetWidth;
+                screenTerms.classList.add('inverted-flash');
+                els[1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                box.classList.add('on');
+                setTimeout(() => vibrate([200, 80, 200]), 800);
+                await wait(2200);
+
+                await waitTap(screenTerms, { guideDelay: 800, auto: 10000 });
+                darken(1, 1400, true);
+                await wait(1500);
+            }
+
+            // #S18-1 : 02:28 '오늘의 평가가 완료되었습니다.' -> 알림을 누르면 평가 화면
+            async function sceneNightNotice() {
+                termsBody.innerHTML = '';
+                setLock('02:28', true);
+                darken(0, 1200);
+                await wait(1800);
+
+                const n = { app: '청소년 이용약관', icon: '📋', color: '#1c1c1e', time: '지금', text: '오늘의 평가가 완료되었습니다.' };
+                const el = addNoti(n, true);
+                vibrate([120, 60, 120]);
+                pushReal('청소년 이용약관', n.text, 'evaluation');
+                const hint = $('swipe-hint');
+                hint.textContent = '알림을 눌러 확인하기';
+                setTimeout(() => hint.classList.add('show'), 1200);
+
+                await new Promise((resolve) => {
+                    el.addEventListener('click', resolve, { once: true });
+                    // 기기 알림을 눌러 돌아온 경우에도 진행
+                    notifTapHandler = resolve;
+                });
+                notifTapHandler = null;
+                vibrate(15);
+                hint.classList.remove('show');
+                lock.classList.add('release');
+                lock.style.transform = 'translateY(-100%)';
+                lock.style.opacity = '0.4';
+                await wait(480);
+                lock.classList.remove('active', 'release');
+                lock.style.transform = '';
+                lock.style.opacity = '';
+                hint.textContent = '위로 쓸어올려 열기';
+            }
+
+            // #S18-2 : [ 오늘의 평가 ]
+            async function sceneEvaluation() {
+                termsBody.innerHTML = '';
+                const head = document.createElement('div');
+                head.className = 'eval-head';
+                head.textContent = '[ 오늘의 평가 ]';
+                termsBody.appendChild(head);
+                await nextFrame();
+                head.classList.add('show');
+                await wait(700);
+
+                const items = [
+                    ['학습 목표 미달성'], ['자기 관리 부족'], ['진로 계획 미수검'],
+                    ['수행평가 제출 지연', 1], ['목표 의식 결여', 1], ['성실도 기준 미달', 1], ['비교 분석 하위 38%', 1]
+                ];
+                for (const [t, minor] of items) {
+                    const it = document.createElement('div');
+                    it.className = 'eval-item' + (minor ? ' minor' : '');
+                    it.textContent = t;
+                    termsBody.appendChild(it);
+                    await nextFrame();
+                    it.classList.add('show');
+                    vibrate(minor ? 10 : 30);
+                    await wait(minor ? 320 : 750);
+                }
+                const more = document.createElement('div');
+                more.className = 'eval-more';
+                termsBody.appendChild(more);
+                await nextFrame();
+                more.classList.add('show');
+                more.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                await wait(1900);
+            }
+
+            // #S18-3~4 : 강제 동의 -> '오류가 발생했습니다' 3회 -> 새로고침
+            const errorLayer = $('error-layer');
+            async function showError(round) {
+                $('err-code').textContent = `ERR_CONSENT_FAILED (${round}/3)`;
+                errorLayer.querySelectorAll('.err-clone').forEach((n) => n.remove());
+                errorLayer.classList.remove('on');
+                errorLayer.classList.add('active');
+                void errorLayer.offsetWidth;
+                errorLayer.classList.add('on');
+                vibrate([90, 50, 90, 50, 200]);
+
+                if (round < 3) {
+                    await wait(1900);
+                } else {
+                    // 마지막 오류: 오류 창이 쏟아진다
+                    await wait(700);
+                    for (let i = 0; i < 14; i++) {
+                        const c = document.createElement('div');
+                        c.className = 'err-clone';
+                        c.textContent = '오류가 발생했습니다';
+                        // 화면 밖으로 넘치지 않게 남은 폭/높이 안에서 흩뿌린다
+                        const fx = (i * 0.618) % 1, fy = (i * 0.382 + 0.1) % 1;
+                        c.style.left = `calc((100% - 230px) * ${fx.toFixed(3)} + 5px)`;
+                        c.style.top = `calc((100% - 80px) * ${fy.toFixed(3)} + 20px)`;
+                        errorLayer.appendChild(c);
+                        vibrate(15);
+                        await wait(Math.max(50, 160 - i * 10));
+                    }
+                    await wait(600);
+                }
+                errorLayer.classList.remove('active', 'on');
+            }
+
+            async function sceneForcedConsent() {
+                for (let round = 1; round <= 3; round++) {
+                    await ask('위의 모든 항목에 동의하시겠습니까?', round > 1 ? '다시 시도해 주세요.' : '', {
+                        onNo: 'block',
+                        noToast: '‘아니요’는 선택할 수 없습니다.'
+                    });
+                    await showError(round);
+                    await wait(300);
+                }
+            }
+
+            // 새로고침 (실제 reload 대신 연출 — 진행 상태를 잃지 않기 위해)
+            async function sceneReload() {
+                const layer = $('reload-layer');
+                const spinner = $('spinner');
+                if (!spinner.children.length) {
+                    for (let i = 0; i < 8; i++) {
+                        const b = document.createElement('i');
+                        b.style.transform = `rotate(${i * 45}deg)`;
+                        b.style.opacity = String(0.25 + i * 0.1);
+                        spinner.appendChild(b);
+                    }
+                }
+                layer.classList.add('active');
+                await nextFrame();
+                layer.classList.add('run');
+                termsBody.innerHTML = '';
+                await wait(2200);
+                layer.style.transition = 'opacity .5s ease';
+                layer.style.opacity = '0';
+                await wait(550);
+                layer.classList.remove('active', 'run');
+                layer.style.opacity = '';
+                layer.style.transition = '';
+                await wait(900);
+            }
+
+            // #S18-5 : 나 자신으로 살아가는 것에 동의하시겠습니까? -> 암전
+            async function sceneFinal() {
+                for (;;) {
+                    const a = await ask('나 자신으로 살아가는 것에 동의하시겠습니까?', '');
+                    if (a === 'yes') break;
+                    showToast('괜찮아요. 천천히 생각해도 됩니다.', 2600);
+                    await wait(3200);
+                }
+                vibrate([50, 50, 50]);
+                darken(1, 4000, true);
+                await wait(4300);
+                $('end-text').style.opacity = '1';
+            }
+
+            // 기기 알림을 눌러 앱으로 돌아오면 #S18-1 을 넘긴다
+            let notifTapHandler = null;
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.addEventListener('message', (e) => {
+                    if (e.data && e.data.type === 'NOTIF_TAP' && notifTapHandler) notifTapHandler();
+                });
+            }
+
+            async function run() {
+                await sceneConsent();       // #S1
+                await sceneClause1();       // #S11
+                await sceneClause2();       // #S12
+                await sceneLockedList();    // #S13
+                await sceneLockScreen();    // #S17
+                await sceneNightNotice();   // #S18-1
+                await sceneEvaluation();    // #S18-2
+                await sceneForcedConsent(); // #S18-3~4
+                await sceneReload();
+                await sceneFinal();         // #S18-5
+            }
+            run();
 
             // ================= 앱 설치 (초기에만 노출, 이후 영구 제거) =================
             (function installFlow() {
