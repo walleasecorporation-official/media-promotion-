@@ -582,10 +582,14 @@
             width: 38px;
             height: 38px;
             border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 19px;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .12);
+        }
+
+        .noti-icon svg {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
 
         .noti-main {
@@ -1312,7 +1316,7 @@
                 <div class="ib-sub" id="ib-sub">설치하고 알림도 받아보세요</div>
             </div>
             <button class="ib-btn" id="ib-install" type="button">설치</button>
-            <button class="ib-close" id="ib-close" type="button" aria-label="설치 안내 닫기">✕</button>
+            <button class="ib-close" id="ib-close" type="button" aria-label="설치 안내 닫기"><svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M2 2l10 10M12 2 2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </div>
 
         <div id="install-sheet" role="dialog" aria-modal="true" aria-labelledby="isheet-title" aria-hidden="true">
@@ -1615,12 +1619,55 @@
                 lock.classList.add('active');
             }
 
+            // ---- 앱 아이콘 (iOS 스타일, SVG 로 직접 그린다) ----
+            // 60x60 캔버스, 배경 그라데이션 + 흰색 글리프
+            const APP_ICONS = {
+                // 학교 알리미: 주황 + 펼친 책
+                school: { bg: ['#ffb340', '#ff7a00'], g:
+                    '<path d="M13 19.5c6.2-1.8 11.6-1 16 2.2v20.6c-4.4-3-9.8-3.8-16-2.2Z" fill="#fff"/>' +
+                    '<path d="M47 19.5c-6.2-1.8-11.6-1-16 2.2v20.6c4.4-3 9.8-3.8 16-2.2Z" fill="#fff" fill-opacity=".86"/>' },
+                // 진로 시스템: 남보라 + 나침반
+                career: { bg: ['#8e8bff', '#4a45d4'], g:
+                    '<circle cx="30" cy="30" r="17" fill="none" stroke="#fff" stroke-width="3"/>' +
+                    '<path d="M36.5 23.5 32.6 32.6 23.5 36.5 27.4 27.4Z" fill="#fff"/>' +
+                    '<path d="M36.5 23.5 27.4 27.4 32.6 32.6Z" fill="#ff3b30"/>' +
+                    '<circle cx="30" cy="30" r="1.8" fill="#4a45d4"/>' },
+                // 메시지: 초록 + 말풍선
+                messages: { bg: ['#6af27f', '#0ab82a'], g:
+                    '<ellipse cx="30" cy="28.5" rx="18" ry="14.5" fill="#fff"/>' +
+                    '<path d="M16.5 37.5c-.3 3.6-1.8 6.4-4.2 8.2 4.6.3 8.4-1.2 11-3.8Z" fill="#fff"/>' },
+                // 학원 앱: 빨강 + 연필
+                academy: { bg: ['#ff7166', '#e0241a'], g:
+                    '<g transform="rotate(45 30 30)">' +
+                    '<rect x="26" y="12" width="8" height="26" rx="1.2" fill="#fff"/>' +
+                    '<rect x="26" y="12" width="8" height="5" rx="1.2" fill="#ffd0cc"/>' +
+                    '<path d="M26 39h8l-4 8Z" fill="#fff"/><path d="M28.6 44.2h2.8L30 47Z" fill="#3a3a3c"/></g>' },
+                // 메신저: 노랑 + 갈색 말풍선
+                talk: { bg: ['#ffe812', '#fbd800'], g:
+                    '<ellipse cx="30" cy="28" rx="18" ry="14" fill="#3a1d1d"/>' +
+                    '<path d="M21 38.5 19 46.5 27.2 41.2Z" fill="#3a1d1d"/>' },
+                // 청소년 이용약관: 앱 아이콘과 같은 체크박스
+                terms: { bg: ['#2c2c2e', '#000000'], g:
+                    '<rect x="15" y="15" width="30" height="30" rx="8" fill="#fff"/>' +
+                    '<path d="M22.5 30.5 28 36 38 24.5" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' }
+            };
+
+            function appIcon(key) {
+                const ic = APP_ICONS[key];
+                const id = 'ig-' + key;
+                return `<svg viewBox="0 0 60 60" aria-hidden="true">
+                    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="${ic.bg[0]}"/><stop offset="1" stop-color="${ic.bg[1]}"/>
+                    </linearGradient></defs>
+                    <rect width="60" height="60" fill="url(#${id})"/>${ic.g}</svg>`;
+            }
+
             function addNoti(n, tappable) {
                 const el = document.createElement(tappable ? 'button' : 'div');
                 if (tappable) el.type = 'button';
                 el.className = 'noti' + (tappable ? ' tappable' : '');
                 el.innerHTML =
-                    `<span class="noti-icon" style="background:${n.color}">${n.icon}</span>
+                    `<span class="noti-icon">${appIcon(n.icon)}</span>
                      <span class="noti-main">
                         <span class="noti-top"><span>${n.app}</span><span class="noti-time">${n.time}</span></span>
                         <span class="noti-body" style="display:block">${n.text}</span>
@@ -1703,11 +1750,11 @@
             }
 
             const NIGHT_NOTIS = [
-                { app: '학교 알리미', icon: '📚', color: '#ff9500', time: '지금', text: '국어 수행평가 제출해' },
-                { app: '진로 시스템', icon: '🧭', color: '#5856d6', time: '2분 전', text: '명확한 진로 설정 미충족' },
-                { app: '메시지', icon: '💬', color: '#34c759', time: '15분 전', text: '담임 선생님 메시지' },
-                { app: '학원 앱', icon: '✏️', color: '#ff3b30', time: '32분 전', text: '학원 숙제 미완료' },
-                { app: '카카오톡', icon: '💛', color: '#fee500', time: '1시간 전', text: '친구 단톡방 317개 메시지' }
+                { app: '학교 알리미', icon: 'school', time: '지금', text: '국어 수행평가 제출해' },
+                { app: '진로 시스템', icon: 'career', time: '2분 전', text: '명확한 진로 설정 미충족' },
+                { app: '메시지', icon: 'messages', time: '15분 전', text: '담임 선생님 메시지' },
+                { app: '학원 앱', icon: 'academy', time: '32분 전', text: '학원 숙제 미완료' },
+                { app: '카카오톡', icon: 'talk', time: '1시간 전', text: '친구 단톡방 317개 메시지' }
             ];
 
             // #S17 : 23:02 잠금화면 -> 위로 쓸면 약관 화면 + 검정 바탕 반전
@@ -1771,7 +1818,7 @@
                 darken(0, 1200);
                 await wait(1800);
 
-                const n = { app: '청소년 이용약관', icon: '📋', color: '#1c1c1e', time: '지금', text: '오늘의 평가가 완료되었습니다.' };
+                const n = { app: '청소년 이용약관', icon: 'terms', time: '지금', text: '오늘의 평가가 완료되었습니다.' };
                 const el = addNoti(n, true);
                 vibrate([120, 60, 120]);
                 pushReal('청소년 이용약관', n.text, 'evaluation');
@@ -1986,7 +2033,7 @@
                     android: {
                         title: "홈 화면에 추가해서 앱으로 설치하기",
                         steps: [
-                            "브라우저 오른쪽 위 ⋮ 메뉴를 여세요",
+                            "브라우저 오른쪽 위 메뉴(점 세 개)를 여세요",
                             "“앱 설치” 또는 “홈 화면에 추가”를 선택하세요",
                             "“설치”를 누르면 완료예요"
                         ]
@@ -2004,7 +2051,7 @@
                         steps: [
                             "화면 구석의 메뉴 버튼을 탭하세요",
                             "“Safari로 열기”를 선택하세요",
-                            "Safari에서 공유 → “홈 화면에 추가”"
+                            "Safari에서 공유 버튼을 누르고 “홈 화면에 추가”"
                         ],
                         action: "링크 복사하기"
                     },
@@ -2012,7 +2059,7 @@
                         title: "다른 브라우저에서 열어야 앱으로 설치할 수 있어요",
                         steps: [
                             "아래 버튼으로 Chrome에서 열어주세요",
-                            "Chrome 오른쪽 위 ⋮ 메뉴를 여세요",
+                            "Chrome 오른쪽 위 메뉴(점 세 개)를 여세요",
                             "“앱 설치”를 선택하면 완료예요"
                         ],
                         action: "Chrome에서 열기"
@@ -2080,7 +2127,7 @@
                             document.body.removeChild(ta);
                         } catch (e) { ok = false; }
                     }
-                    sheetAction.textContent = ok ? "복사했어요 ✓" : "주소창의 링크를 복사해주세요";
+                    sheetAction.textContent = ok ? "복사했어요" : "주소창의 링크를 복사해주세요";
                 });
 
                 // ---- beforeinstallprompt ----
