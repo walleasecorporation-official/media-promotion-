@@ -984,14 +984,7 @@
             text-align: center;
         }
 
-        #end-text .end-title {
-            color: #fff;
-            font-size: min(8vw, 32px);
-            font-weight: 300;
-            letter-spacing: 6px;
-        }
 
-        #end-text .help-note {
             font-size: 11.5px;
             color: rgba(255, 255, 255, .34);
             line-height: 1.7;
@@ -1308,7 +1301,6 @@
         <div class="tap-guide" id="tap-guide">화면을 눌러 계속하기</div>
         <div id="black-overlay"></div>
         <div id="end-text">
-            <span class="end-title">juspeace</span>
             <p class="help-note">힘든 순간이 있다면 혼자 견디지 않아도 됩니다.<br>청소년 상담 1388 · 정신건강 위기상담 1577-0199</p>
         </div>
 
@@ -1496,6 +1488,9 @@
             }
 
             // ================= 약관 조항 =================
+            // 목록 항목(조항·잠금화면 알림·평가 항목)이 하나씩 나열되는 간격
+            const ITEM_GAP_MS = 2000;
+
             const CHECK_SVG = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.4 5.6 10.4 11.5 3.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
             const LOCK_SVG = '<svg class="clause-lock" viewBox="0 0 16 20" fill="currentColor" aria-hidden="true"><path d="M8 0a5 5 0 0 0-5 5v3H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V5a5 5 0 0 0-5-5Zm-3 5a3 3 0 1 1 6 0v3H5V5Z"/></svg>';
 
@@ -1587,13 +1582,11 @@
                     if (CLAUSES[i].met) el.classList.add('met');
                     else el.classList.add('unmet');
                     els.push(el);
-                    await wait(450);
-                }
-                // 조항이 하나씩 잠긴다
-                for (const el of els) {
+                    // 조항이 뜨고 잠시 뒤 잠긴다. 다음 조항은 2초 간격으로 나열
+                    await wait(700);
                     el.classList.add('locked');
                     vibrate(20);
-                    await wait(380);
+                    await wait(ITEM_GAP_MS - 700);
                 }
                 const sum = document.createElement('p');
                 sum.className = 'terms-summary';
@@ -1750,7 +1743,7 @@
                     list.insertBefore(el, list.firstChild);
                     vibrate(25);
                     pushReal(n.app, n.text, 'night-' + i);
-                    await wait(650);
+                    await wait(ITEM_GAP_MS);
                 }
                 $('swipe-hint').classList.add('show');
 
@@ -1827,7 +1820,7 @@
                     await nextFrame();
                     it.classList.add('show');
                     vibrate(minor ? 10 : 30);
-                    await wait(minor ? 320 : 750);
+                    await wait(ITEM_GAP_MS);
                 }
                 const more = document.createElement('div');
                 more.className = 'eval-more';
